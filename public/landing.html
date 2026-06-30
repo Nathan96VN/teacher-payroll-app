@@ -3,208 +3,274 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lương Giáo Viên · Payroll for Vietnamese language centres</title>
+<title>Lương Giáo Viên · Teacher Payroll cho trung tâm ngoại ngữ</title>
+<meta name="description" content="Phần mềm tính lương song ngữ cho trung tâm ngoại ngữ Việt Nam. Lịch dạy, điểm danh, thuế TNCN 2026 và bảo hiểm — chính xác đến từng đồng.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --ink:#13211d; --ink-soft:#5d6f69; --line:#e2e9e6; --line-soft:#eef3f1;
-    --paper:#ffffff; --canvas:#f4f7f5; --teal:#0d7a6f; --teal-deep:#0a5a52;
-    --teal-soft:#e4f2ef; --gold:#c08a2d; --gold-soft:#f7efdf; --rose:#b3473f;
-    --ink-on-teal:#eafdf9;
+    --ink:#14201b; --ink-soft:#5c6b64; --line:#e3eae6; --line-soft:#eef3f0;
+    --paper:#ffffff; --canvas:#f3f7f5; --teal:#0d7a6f; --teal-deep:#0a5b53; --teal-soft:#e4f2ef;
+    --gold:#bd8526; --gold-soft:#f7eed9; --rose:#b3473f;
+    --shadow-s:0 1px 2px rgba(20,32,27,.05),0 4px 14px rgba(20,32,27,.05);
+    --shadow-l:0 2px 6px rgba(20,32,27,.06),0 24px 60px rgba(20,32,27,.12);
+    --r:16px;
   }
-  *{box-sizing:border-box;margin:0;padding:0}
+  *{box-sizing:border-box;margin:0;padding:0;}
   html{scroll-behavior:smooth;}
-  body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-    background:var(--canvas);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased;}
-  h1,h2,h3{line-height:1.1;letter-spacing:-.02em;font-weight:680;}
+  body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--canvas);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden;}
+  h1,h2,h3,.disp{font-family:'Space Grotesk','Inter',sans-serif;letter-spacing:-.02em;line-height:1.05;font-weight:700;}
+  .num{font-variant-numeric:tabular-nums;}
   a{color:inherit;text-decoration:none;}
-  .wrap{max-width:1080px;margin:0 auto;padding:0 24px;}
+  .wrap{max-width:1140px;margin:0 auto;padding:0 24px;}
+  .eyebrow{font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--teal);}
+  [data-en]{display:none;}
+  html[lang="en"] [data-vi]{display:none;}
+  html[lang="en"] [data-en]{display:inline;}
+  html[lang="en"] [data-en].blk{display:block;}
+
+  /* buttons */
+  .btn{display:inline-flex;align-items:center;gap:9px;height:46px;padding:0 22px;border-radius:11px;font-family:'Inter';font-size:15px;font-weight:600;border:none;cursor:pointer;transition:transform .12s ease,box-shadow .2s ease,background .2s;}
+  .btn:active{transform:translateY(1px);}
+  .btn-solid{background:var(--teal);color:#fff;box-shadow:0 6px 18px rgba(13,122,111,.28);}
+  .btn-solid:hover{background:var(--teal-deep);box-shadow:0 8px 24px rgba(13,122,111,.34);}
+  .btn-ghost{background:var(--paper);color:var(--ink);border:1px solid var(--line);}
+  .btn-ghost:hover{border-color:var(--teal);color:var(--teal);}
+  .btn-lg{height:54px;padding:0 28px;font-size:16px;}
+  :focus-visible{outline:3px solid var(--teal-soft);outline-offset:2px;}
 
   /* nav */
-  nav{position:sticky;top:0;z-index:40;background:rgba(244,247,245,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);}
-  .nav-in{display:flex;align-items:center;justify-content:space-between;height:64px;}
-  .logo{display:flex;align-items:center;gap:10px;font-weight:680;font-size:16px;}
-  .logo-mark{width:34px;height:34px;border-radius:9px;background:var(--teal);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;}
-  .nav-right{display:flex;align-items:center;gap:8px;}
-  .lang{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-right:6px;}
-  .lang button{border:none;background:none;font-family:inherit;font-size:12.5px;font-weight:600;padding:6px 10px;cursor:pointer;color:var(--ink-soft);}
-  .lang button.on{background:var(--ink);color:#fff;}
-  .btn{font-family:inherit;font-weight:600;font-size:14px;border:none;cursor:pointer;border-radius:9px;padding:9px 16px;transition:.15s;}
-  .btn-ghost{background:none;color:var(--ink);}
-  .btn-ghost:hover{background:var(--teal-soft);}
-  .btn-solid{background:var(--teal);color:#fff;}
-  .btn-solid:hover{background:var(--teal-deep);}
-  .btn-lg{padding:13px 24px;font-size:15px;border-radius:11px;}
+  nav{position:sticky;top:0;z-index:50;background:rgba(243,247,245,.82);backdrop-filter:blur(12px);border-bottom:1px solid transparent;transition:border-color .2s,background .2s;}
+  nav.scrolled{border-color:var(--line);background:rgba(243,247,245,.94);}
+  .nav-in{display:flex;align-items:center;gap:18px;height:70px;}
+  .brand{display:flex;align-items:center;gap:11px;font-weight:700;font-family:'Space Grotesk';font-size:17px;}
+  .brand .mark{width:38px;height:38px;border-radius:11px;background:var(--teal);color:#fff;display:flex;align-items:center;justify-content:center;font-size:19px;box-shadow:0 4px 12px rgba(13,122,111,.3);}
+  .nav-spacer{flex:1;}
+  .langtog{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--paper);}
+  .langtog button{width:42px;height:36px;border:none;background:none;font-family:'Inter';font-weight:600;font-size:13px;color:var(--ink-soft);cursor:pointer;}
+  .langtog button.on{background:var(--ink);color:#fff;}
+  .nav-link{font-size:14.5px;font-weight:500;color:var(--ink-soft);}
+  .nav-link:hover{color:var(--ink);}
+  @media(max-width:860px){.nav-hide{display:none;}}
 
   /* hero */
-  .hero{padding:80px 0 40px;position:relative;overflow:hidden;}
-  .hero-grid{display:grid;gap:48px;align-items:center;}
-  @media(min-width:880px){.hero-grid{grid-template-columns:1.05fr .95fr;}}
-  .eyebrow{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:var(--teal);background:var(--teal-soft);padding:6px 13px;border-radius:30px;margin-bottom:22px;}
-  .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--teal);}
-  h1.hero-h{font-size:50px;letter-spacing:-.03em;}
-  @media(max-width:880px){h1.hero-h{font-size:38px;}}
-  .hero-h .accent{color:var(--teal);}
-  .hero-sub{font-size:18px;color:var(--ink-soft);margin:22px 0 30px;max-width:30em;}
-  .hero-cta{display:flex;gap:12px;flex-wrap:wrap;align-items:center;}
-  .hero-note{font-size:13px;color:var(--ink-soft);margin-top:16px;display:flex;align-items:center;gap:7px;}
-  .check{color:var(--teal);font-weight:700;}
+  .hero{position:relative;padding:64px 0 90px;}
+  .hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:center;}
+  .hero h1{font-size:clamp(34px,5vw,58px);}
+  .hero h1 .accent{color:var(--teal);}
+  .hero .lead{font-size:clamp(17px,2vw,20px);color:var(--ink-soft);margin:22px 0 30px;max-width:30em;}
+  .hero-cta{display:flex;gap:13px;flex-wrap:wrap;}
+  .hero-note{margin-top:18px;font-size:13.5px;color:var(--ink-soft);display:flex;align-items:center;gap:8px;}
+  .hero-note svg{width:16px;height:16px;color:var(--teal);}
+  .blob{position:absolute;border-radius:50%;filter:blur(70px);opacity:.5;z-index:-1;}
+  .blob.a{width:420px;height:420px;background:#bfe6df;top:-120px;right:-80px;}
+  .blob.b{width:320px;height:320px;background:#f3e6c8;bottom:-60px;left:-120px;opacity:.45;}
+  @media(max-width:880px){.hero-grid{grid-template-columns:1fr;gap:40px;}.hero{padding:40px 0 64px;}}
 
-  /* payslip visual */
-  .slip-card{background:var(--paper);border:1px solid var(--line);border-radius:18px;box-shadow:0 1px 3px rgba(19,33,29,.04),0 18px 50px rgba(19,33,29,.10);overflow:hidden;transform:rotate(.6deg);}
-  .slip-top{background:var(--teal);color:var(--ink-on-teal);padding:18px 20px;display:flex;justify-content:space-between;align-items:center;}
-  .slip-top .t{font-weight:680;font-size:15px;}
-  .slip-top .p{font-size:11.5px;opacity:.85;}
-  .slip-logo{width:34px;height:34px;border-radius:8px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;}
-  .slip-body{padding:18px 20px;}
-  .slip-row{display:flex;justify-content:space-between;font-size:13px;padding:7px 0;border-bottom:1px solid var(--line-soft);}
-  .slip-row .l{color:var(--ink-soft);}
-  .slip-row .v{font-weight:600;font-variant-numeric:tabular-nums;}
-  .slip-row.exempt .v{color:var(--teal);}
-  .slip-row.exempt .l{color:var(--teal);}
-  .slip-net{display:flex;justify-content:space-between;align-items:center;background:var(--teal-soft);margin:14px -20px -18px;padding:16px 20px;}
-  .slip-net .l{font-weight:680;font-size:13px;color:var(--teal-deep);}
-  .slip-net .v{font-weight:800;font-size:20px;color:var(--teal-deep);font-variant-numeric:tabular-nums;}
-  .float-badge{position:absolute;background:var(--paper);border:1px solid var(--line);border-radius:11px;box-shadow:0 8px 24px rgba(19,33,29,.10);padding:10px 13px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:8px;}
-  .float-badge .ic{width:24px;height:24px;border-radius:7px;background:var(--gold-soft);color:var(--gold);display:flex;align-items:center;justify-content:center;}
-  .fb-1{top:8px;right:-14px;}
-  .fb-2{bottom:78px;left:-22px;}
-  @media(max-width:880px){.float-badge{display:none;}}
+  /* payslip card (signature) */
+  .slip-stage{perspective:1400px;}
+  .slip{background:var(--paper);border-radius:18px;box-shadow:var(--shadow-l);border:1px solid var(--line);overflow:hidden;transform-style:preserve-3d;transition:transform .15s ease-out;will-change:transform;}
+  .slip-top{background:linear-gradient(135deg,var(--teal),var(--teal-deep));color:#fff;padding:18px 22px;display:flex;align-items:center;justify-content:space-between;}
+  .slip-top .who{font-family:'Space Grotesk';font-weight:600;font-size:15px;}
+  .slip-top .sub{font-size:11.5px;opacity:.8;}
+  .slip-top .badge{font-size:10.5px;font-weight:600;background:rgba(255,255,255,.18);padding:4px 9px;border-radius:20px;letter-spacing:.04em;}
+  .slip-body{padding:18px 22px 22px;}
+  .slip-row{display:flex;justify-content:space-between;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--line-soft);font-size:13.5px;}
+  .slip-row .k{color:var(--ink-soft);}
+  .slip-row .v{font-weight:600;}
+  .slip-row.neg .v{color:var(--rose);}
+  .slip-row.pos .v{color:var(--teal);}
+  .slip-net{display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:6px;}
+  .slip-net .k{font-weight:600;font-size:14px;}
+  .slip-net .v{font-family:'Space Grotesk';font-weight:700;font-size:30px;color:var(--teal);}
+  .slider-wrap{margin-top:18px;background:var(--canvas);border-radius:12px;padding:14px 16px;border:1px solid var(--line);}
+  .slider-lab{display:flex;justify-content:space-between;font-size:12.5px;color:var(--ink-soft);margin-bottom:9px;}
+  .slider-lab b{color:var(--ink);font-weight:600;}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:6px;background:linear-gradient(90deg,var(--teal) 0%,var(--teal) var(--p,60%),var(--line) var(--p,60%));outline:none;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:#fff;border:3px solid var(--teal);box-shadow:0 2px 8px rgba(13,122,111,.4);cursor:grab;}
+  input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:#fff;border:3px solid var(--teal);cursor:grab;}
+  .slip-hint{text-align:center;font-size:11.5px;color:var(--ink-soft);margin-top:11px;}
 
   /* trust strip */
   .trust{border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--paper);}
-  .trust-in{display:flex;flex-wrap:wrap;gap:16px 40px;justify-content:center;padding:22px 0;font-size:13.5px;color:var(--ink-soft);}
-  .trust-item{display:flex;align-items:center;gap:8px;}
-  .trust-item b{color:var(--ink);font-weight:680;}
+  .trust-in{display:flex;flex-wrap:wrap;gap:14px 40px;justify-content:center;padding:22px 0;}
+  .trust-item{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:500;color:var(--ink);}
+  .trust-item svg{width:19px;height:19px;color:var(--teal);flex-shrink:0;}
 
   /* sections */
-  section.block{padding:74px 0;}
-  .sec-head{max-width:34em;margin-bottom:44px;}
-  .sec-eyebrow{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);margin-bottom:12px;}
-  h2.sec-h{font-size:34px;}
-  .sec-sub{font-size:17px;color:var(--ink-soft);margin-top:14px;}
+  section{padding:84px 0;}
+  .sec-head{max-width:36em;margin-bottom:48px;}
+  .sec-head h2{font-size:clamp(28px,3.6vw,42px);margin:14px 0 14px;}
+  .sec-head p{color:var(--ink-soft);font-size:17px;}
+  .sec-head.center{margin-left:auto;margin-right:auto;text-align:center;}
 
-  .feat-grid{display:grid;gap:18px;}
-  @media(min-width:680px){.feat-grid{grid-template-columns:1fr 1fr;}}
-  @media(min-width:980px){.feat-grid{grid-template-columns:1fr 1fr 1fr;}}
-  .feat{background:var(--paper);border:1px solid var(--line);border-radius:15px;padding:24px;transition:.18s;}
-  .feat:hover{border-color:var(--teal);transform:translateY(-2px);box-shadow:0 10px 30px rgba(19,33,29,.06);}
-  .feat-ic{width:42px;height:42px;border-radius:11px;background:var(--teal-soft);color:var(--teal);display:flex;align-items:center;justify-content:center;margin-bottom:15px;}
-  .feat-ic svg{width:22px;height:22px;}
-  .feat h3{font-size:17px;margin-bottom:7px;}
-  .feat p{font-size:14px;color:var(--ink-soft);}
+  /* features */
+  .feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+  @media(max-width:880px){.feat-grid{grid-template-columns:1fr;}}
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:26px;box-shadow:var(--shadow-s);transition:transform .18s ease,box-shadow .2s ease,border-color .2s;}
+  .card:hover{transform:translateY(-4px);box-shadow:var(--shadow-l);border-color:var(--teal-soft);}
+  .card .ic{width:46px;height:46px;border-radius:12px;background:var(--teal-soft);color:var(--teal);display:flex;align-items:center;justify-content:center;margin-bottom:18px;}
+  .card .ic svg{width:23px;height:23px;}
+  .card h3{font-size:19px;margin-bottom:9px;}
+  .card p{color:var(--ink-soft);font-size:14.5px;}
+  .card.big{grid-column:span 2;display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:center;}
+  @media(max-width:880px){.card.big{grid-column:span 1;grid-template-columns:1fr;}}
 
-  /* how it works */
-  .steps{display:grid;gap:18px;counter-reset:s;}
-  @media(min-width:780px){.steps{grid-template-columns:repeat(auto-fit,minmax(180px,1fr));}}
-  .step{position:relative;padding:26px 22px;background:var(--paper);border:1px solid var(--line);border-radius:15px;}
-  .step-n{font-size:13px;font-weight:800;color:var(--teal);background:var(--teal-soft);width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;}
-  .step h3{font-size:16px;margin-bottom:6px;}
-  .step p{font-size:13.5px;color:var(--ink-soft);}
+  /* mini timetable visual */
+  .mini-tt{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;}
+  .mini-tt .c{height:30px;border-radius:7px;background:var(--line-soft);transition:background .4s ease,transform .4s ease;}
+  .mini-tt .c.on{background:var(--teal-soft);}
+  .mini-tt .c.on.b{background:var(--teal);}
+  /* mini calendar visual */
+  .mini-cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
+  .mini-cal .d{aspect-ratio:1;border-radius:8px;background:var(--canvas);border:1px solid var(--line-soft);display:flex;align-items:center;justify-content:center;}
+  .mini-cal .d .dot{width:8px;height:8px;border-radius:50%;transform:scale(0);transition:transform .35s ease;}
+  .mini-cal .d.work .dot{background:var(--teal);}
+  .mini-cal .d.miss .dot{background:var(--rose);}
+  .reveal.in .mini-cal .dot{transform:scale(1);}
+
+  /* why / benefits */
+  .why{background:var(--ink);color:#eef3f0;}
+  .why .eyebrow{color:#7fd8cb;}
+  .why h2{color:#fff;}
+  .why .sec-head p{color:#aebbb5;}
+  .why-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px 40px;}
+  @media(max-width:760px){.why-grid{grid-template-columns:1fr;}}
+  .why-item{display:flex;gap:16px;padding:18px 0;border-top:1px solid rgba(255,255,255,.1);}
+  .why-item .n{font-family:'Space Grotesk';font-weight:600;color:#7fd8cb;font-size:14px;padding-top:2px;}
+  .why-item h3{font-size:18px;color:#fff;margin-bottom:5px;}
+  .why-item p{color:#aebbb5;font-size:14.5px;}
+
+  /* accuracy band */
+  .acc{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;}
+  @media(max-width:820px){.acc{grid-template-columns:1fr;gap:32px;}}
+  .brackets{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:24px;box-shadow:var(--shadow-s);}
+  .br-row{display:flex;align-items:center;gap:12px;padding:7px 0;}
+  .br-bar{height:26px;border-radius:6px;background:var(--teal);opacity:.85;min-width:8px;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;color:#fff;font-size:11px;font-weight:600;}
+  .br-row .rng{font-size:12.5px;color:var(--ink-soft);width:118px;flex-shrink:0;font-variant-numeric:tabular-nums;}
+
+  /* steps */
+  .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;counter-reset:s;}
+  @media(max-width:820px){.steps{grid-template-columns:1fr 1fr;}}
+  @media(max-width:480px){.steps{grid-template-columns:1fr;}}
+  .step{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:24px;position:relative;}
+  .step .n{font-family:'Space Grotesk';font-weight:700;font-size:15px;color:var(--teal);background:var(--teal-soft);width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;}
+  .step h3{font-size:16.5px;margin-bottom:7px;}
+  .step p{color:var(--ink-soft);font-size:13.5px;}
 
   /* pricing */
-  .price-wrap{background:var(--ink);color:#e9f1ef;border-radius:22px;padding:54px 40px;text-align:center;position:relative;overflow:hidden;}
-  .price-wrap h2{font-size:32px;color:#fff;}
-  .price-wrap .psub{color:#a7bdb7;font-size:16px;margin:14px auto 36px;max-width:32em;}
-  .price-cards{display:grid;gap:18px;max-width:680px;margin:0 auto;}
-  @media(min-width:680px){.price-cards{grid-template-columns:1fr 1fr;}}
-  .price-card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:30px 26px;text-align:left;}
-  .price-card.featured{background:#fff;color:var(--ink);}
-  .price-card .plan{font-size:13px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--teal);margin-bottom:14px;}
-  .price-card.featured .plan{color:var(--teal);}
-  .price-amt{font-size:34px;font-weight:800;letter-spacing:-.02em;}
-  .price-amt span{font-size:15px;font-weight:500;color:var(--ink-soft);}
-  .price-card:not(.featured) .price-amt span{color:#a7bdb7;}
-  .price-feats{list-style:none;margin:20px 0 0;font-size:14px;}
-  .price-feats li{padding:7px 0;display:flex;gap:9px;align-items:flex-start;}
-  .price-feats li::before{content:"✓";color:var(--teal);font-weight:800;}
-  .save-tag{display:inline-block;background:var(--gold-soft);color:var(--gold);font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:20px;margin-left:8px;}
+  .price-wrap{display:grid;grid-template-columns:1fr 1fr;gap:22px;max-width:760px;margin:0 auto;}
+  @media(max-width:680px){.price-wrap{grid-template-columns:1fr;}}
+  .price{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:30px;box-shadow:var(--shadow-s);}
+  .price.feature{border:2px solid var(--teal);position:relative;}
+  .price .tag{position:absolute;top:-13px;left:30px;background:var(--gold);color:#fff;font-size:11.5px;font-weight:600;padding:5px 12px;border-radius:20px;letter-spacing:.03em;}
+  .price .plan{font-weight:600;color:var(--ink-soft);font-size:14px;}
+  .price .amt{font-family:'Space Grotesk';font-weight:700;font-size:38px;margin:8px 0 4px;}
+  .price .amt span{font-size:15px;font-weight:500;color:var(--ink-soft);font-family:'Inter';}
+  .price .save{color:var(--gold);font-size:13.5px;font-weight:600;margin-bottom:18px;}
+  .price ul{list-style:none;margin:18px 0 22px;}
+  .price li{display:flex;gap:10px;align-items:flex-start;padding:7px 0;font-size:14px;color:var(--ink);}
+  .price li svg{width:18px;height:18px;color:var(--teal);flex-shrink:0;margin-top:2px;}
 
-  /* waitlist / cta */
-  .cta-final{text-align:center;padding:70px 0;}
-  .cta-final h2{font-size:34px;margin-bottom:14px;}
-  .cta-final p{font-size:17px;color:var(--ink-soft);max-width:30em;margin:0 auto 28px;}
+  /* final cta */
+  .cta-band{background:linear-gradient(135deg,var(--teal),var(--teal-deep));color:#fff;border-radius:24px;padding:56px 40px;text-align:center;}
+  .cta-band h2{font-size:clamp(26px,3.4vw,38px);color:#fff;margin-bottom:14px;}
+  .cta-band p{color:rgba(255,255,255,.85);max-width:32em;margin:0 auto 26px;font-size:17px;}
+  .cta-band .btn-solid{background:#fff;color:var(--teal-deep);box-shadow:0 8px 24px rgba(0,0,0,.18);}
+  .cta-band .btn-solid:hover{background:#f1faf8;}
+  .cta-band .btn-ghost{background:transparent;border-color:rgba(255,255,255,.5);color:#fff;}
+  .cta-band .btn-ghost:hover{border-color:#fff;color:#fff;}
 
   /* footer */
-  footer{border-top:1px solid var(--line);padding:36px 0;font-size:13px;color:var(--ink-soft);}
-  .foot-in{display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px;}
-  .disc{background:var(--gold-soft);border:1px solid #ecd9b0;border-radius:11px;padding:14px 16px;font-size:12.5px;color:#7a5a1c;line-height:1.5;margin-top:24px;max-width:60em;}
+  footer{padding:40px 0 56px;border-top:1px solid var(--line);color:var(--ink-soft);font-size:13.5px;}
+  .foot-in{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;align-items:center;}
 
-  /* modal */
-  .modal-bg{position:fixed;inset:0;background:rgba(19,33,29,.5);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;padding:20px;z-index:80;}
-  .modal-bg.open{display:flex;}
-  .modal{background:var(--paper);border-radius:18px;width:100%;max-width:420px;padding:32px;box-shadow:0 30px 70px rgba(0,0,0,.3);}
-  .modal h3{font-size:22px;margin-bottom:6px;}
-  .modal .msub{font-size:14px;color:var(--ink-soft);margin-bottom:24px;}
-  .modal label{display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px;}
-  .modal input{width:100%;height:44px;border:1px solid var(--line);border-radius:10px;padding:0 13px;font-family:inherit;font-size:14px;}
-  .modal input:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px var(--teal-soft);}
-  .modal .btn-solid{width:100%;margin-top:22px;height:46px;}
-  .modal-switch{text-align:center;font-size:13.5px;color:var(--ink-soft);margin-top:18px;}
-  .modal-switch a{color:var(--teal);font-weight:600;cursor:pointer;}
-  .modal-close{float:right;cursor:pointer;color:var(--ink-soft);font-size:20px;line-height:1;}
-  .modal-note{background:var(--teal-soft);border-radius:10px;padding:11px 13px;font-size:12px;color:var(--teal-deep);margin-top:18px;line-height:1.5;}
-
-  [data-en]{display:none !important;}
-  body.en [data-vi]{display:none !important;}
-  body.en [data-en]{display:revert !important;}
+  /* reveal */
+  .reveal{opacity:0;transform:translateY(22px);transition:opacity .6s ease,transform .6s ease;}
+  .reveal.in{opacity:1;transform:none;}
+  @media(prefers-reduced-motion:reduce){
+    .reveal{opacity:1;transform:none;transition:none;}
+    html{scroll-behavior:auto;}
+    .slip{transition:none;}
+  }
 </style>
 </head>
 <body>
 
-<nav>
+<!-- NAV -->
+<nav id="nav">
   <div class="wrap nav-in">
-    <div class="logo"><div class="logo-mark">L</div><span data-vi>Lương Giáo Viên</span><span data-en>Teacher Payroll</span></div>
-    <div class="nav-right">
-      <div class="lang">
-        <button class="on" onclick="setLang('vi',this)">VI</button>
-        <button onclick="setLang('en',this)">EN</button>
-      </div>
-      <button class="btn btn-ghost" onclick="openModal('login')"><span data-vi>Đăng nhập</span><span data-en>Log in</span></button>
-      <button class="btn btn-solid" onclick="openModal('register')"><span data-vi>Dùng thử</span><span data-en>Get started</span></button>
+    <a href="#top" class="brand"><span class="mark">₫</span><span>Lương Giáo Viên</span></a>
+    <div class="nav-spacer"></div>
+    <a href="#features" class="nav-link nav-hide"><span data-vi>Tính năng</span><span data-en>Features</span></a>
+    <a href="#pricing" class="nav-link nav-hide"><span data-vi>Giá</span><span data-en>Pricing</span></a>
+    <div class="langtog" role="group" aria-label="Language">
+      <button id="lang-vi" class="on" onclick="setLang('vi')">VI</button>
+      <button id="lang-en" onclick="setLang('en')">EN</button>
     </div>
+    <a href="/auth.html" class="btn btn-ghost nav-hide" style="height:40px;padding:0 16px;"><span data-vi>Đăng nhập</span><span data-en>Log in</span></a>
+    <a href="/auth.html" class="btn btn-solid" style="height:40px;padding:0 18px;"><span data-vi>Bắt đầu</span><span data-en>Get started</span></a>
   </div>
 </nav>
 
 <!-- HERO -->
-<header class="hero">
+<header class="hero" id="top">
+  <div class="blob a"></div><div class="blob b"></div>
   <div class="wrap hero-grid">
     <div>
-      <span class="eyebrow"><span class="dot"></span><span data-vi>Cho trung tâm ngoại ngữ Việt Nam</span><span data-en>For Vietnamese language centres</span></span>
-      <h1 class="hero-h">
-        <span data-vi>Tính lương giáo viên <span class="accent">chính xác đến từng đồng</span>.</span>
-        <span data-en>Teacher payroll, <span class="accent">right to the last đồng</span>.</span>
+      <div class="eyebrow"><span data-vi>Cho trung tâm ngoại ngữ Việt Nam</span><span data-en>For Vietnamese language centres</span></div>
+      <h1 style="margin-top:14px;">
+        <span data-vi>Tính lương giáo viên, <span class="accent">chính xác đến từng đồng.</span></span>
+        <span data-en blk>Teacher payroll, <span class="accent">right to the last đồng.</span></span>
       </h1>
-      <p class="hero-sub">
-        <span data-vi>Lịch dạy, chấm công, thuế TNCN 2026 và bảo hiểm — tự động, song ngữ, và phiếu lương sẵn sàng in. Trung tâm của bạn quản lý mọi giáo viên ở một nơi.</span>
-        <span data-en>Schedules, attendance, 2026 personal income tax and insurance — automated, bilingual, with print-ready payslips. Your centre manages every teacher in one place.</span>
+      <p class="lead">
+        <span data-vi>Lịch dạy, điểm danh, thuế TNCN 2026 và bảo hiểm — tự động, đúng luật, song ngữ Việt–Anh, trong một công cụ duy nhất.</span>
+        <span data-en>Schedules, attendance, 2026 personal income tax and insurance — automatic, compliant, bilingual, in one simple tool.</span>
       </p>
       <div class="hero-cta">
-        <button class="btn btn-solid btn-lg" onclick="openModal('register')"><span data-vi>Bắt đầu miễn phí</span><span data-en>Start free</span></button>
-        <button class="btn btn-ghost btn-lg" onclick="document.getElementById('how').scrollIntoView()"><span data-vi>Xem cách hoạt động</span><span data-en>See how it works</span></button>
+        <a href="/auth.html" class="btn btn-solid btn-lg"><span data-vi>Bắt đầu ngay</span><span data-en>Get started</span></a>
+        <a href="/index.html?demo=1" class="btn btn-ghost btn-lg">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="6 4 20 12 6 20 6 4" fill="currentColor" stroke="none"/></svg>
+          <span data-vi>Xem bản demo</span><span data-en>See the live demo</span>
+        </a>
       </div>
-      <div class="hero-note"><span class="check">✓</span><span data-vi>Cập nhật theo Luật Thuế TNCN 2026 (Luật 109/2025/QH15)</span><span data-en>Built on the 2026 PIT Law (Law 109/2025/QH15)</span></div>
+      <div class="hero-note">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>
+        <span data-vi>Cập nhật Luật Thuế TNCN 2026 (Luật 109/2025) · kiểm tra đến từng đồng</span>
+        <span data-en>Updated for the 2026 PIT Law (109/2025) · verified to the dong</span>
+      </div>
     </div>
 
-    <div style="position:relative;">
-      <div class="slip-card">
+    <!-- SIGNATURE: live payslip -->
+    <div class="slip-stage">
+      <div class="slip" id="slip">
         <div class="slip-top">
-          <div style="display:flex;gap:11px;align-items:center;">
-            <div class="slip-logo">G</div>
-            <div><div class="t" data-vi>Phiếu lương</div><div class="t" data-en>Payslip</div><div class="p">Nguyễn Thu Hà · NQ01</div></div>
+          <div>
+            <div class="who">Nguyễn Thu Hà</div>
+            <div class="sub"><span data-vi>Phiếu lương · Tháng này</span><span data-en>Payslip · This month</span></div>
           </div>
-          <div class="p" data-vi>Tháng 6, 2026</div><div class="p" data-en>June 2026</div>
+          <div class="badge">VI / EN</div>
         </div>
         <div class="slip-body">
-          <div class="slip-row"><span class="l" data-vi>Lương tiết dạy</span><span class="l" data-en>Teaching pay</span><span class="v">₫7,780,000</span></div>
-          <div class="slip-row"><span class="l" data-vi>Phụ cấp kiêm nhiệm</span><span class="l" data-en>Allowance</span><span class="v">₫3,000,000</span></div>
-          <div class="slip-row"><span class="l" data-vi>Làm thêm — phần thường</span><span class="l" data-en>Overtime — normal</span><span class="v">₫1,800,000</span></div>
-          <div class="slip-row exempt"><span class="l" data-vi>Phụ trội (miễn thuế)</span><span class="l" data-en>Premium (tax-free)</span><span class="v">₫600,000</span></div>
-          <div class="slip-row"><span class="l" data-vi>− Thuế & bảo hiểm</span><span class="l" data-en>− Tax & insurance</span><span class="v">−₫630,000</span></div>
-          <div class="slip-net"><span class="l" data-vi>Thực lĩnh</span><span class="l" data-en>Net take-home</span><span class="v">₫12,550,000</span></div>
+          <div class="slip-row"><span class="k"><span data-vi>Số giờ dạy</span><span data-en>Hours taught</span></span><span class="v num" id="o-hours">99</span></div>
+          <div class="slip-row"><span class="k"><span data-vi>Đơn giá giờ</span><span data-en>Rate / hour</span></span><span class="v num">₫450,000</span></div>
+          <div class="slip-row"><span class="k"><span data-vi>Lương dạy</span><span data-en>Teaching pay</span></span><span class="v num" id="o-teach">—</span></div>
+          <div class="slip-row pos"><span class="k"><span data-vi>Phụ cấp</span><span data-en>Allowance</span></span><span class="v num">₫3,000,000</span></div>
+          <div class="slip-row neg"><span class="k"><span data-vi>BHXH + BHYT</span><span data-en>Insurance</span></span><span class="v num" id="o-ins">−₫570,000</span></div>
+          <div class="slip-row neg"><span class="k"><span data-vi>Thuế TNCN</span><span data-en>Income tax</span></span><span class="v num" id="o-tax">—</span></div>
+          <div class="slip-net"><span class="k"><span data-vi>Thực lĩnh</span><span data-en>Net pay</span></span><span class="v num" id="o-net">—</span></div>
+
+          <div class="slider-wrap">
+            <div class="slider-lab">
+              <span><span data-vi>Kéo để đổi số giờ</span><span data-en>Drag to change hours</span></span>
+              <b><span id="o-hours2">99</span> <span data-vi>giờ</span><span data-en>hrs</span></b>
+            </div>
+            <input type="range" id="hrs" min="20" max="130" value="99" aria-label="Hours">
+          </div>
+          <div class="slip-hint"><span data-vi>↑ Số liệu thật, tính theo biểu thuế 2026</span><span data-en>↑ Real figures, computed on the 2026 tax schedule</span></div>
         </div>
       </div>
-      <div class="float-badge fb-1"><div class="ic">✓</div><span data-vi>Thuế 2026 tự động</span><span data-en>2026 tax, automatic</span></div>
-      <div class="float-badge fb-2"><div class="ic">⏱</div><span data-vi>Chấm công theo lịch</span><span data-en>Calendar attendance</span></div>
     </div>
   </div>
 </header>
@@ -212,182 +278,249 @@
 <!-- TRUST -->
 <div class="trust">
   <div class="wrap trust-in">
-    <div class="trust-item"><span class="check">✓</span><b data-vi>Đối chiếu phiếu lương thật</b><b data-en>Verified vs real payslips</b></div>
-    <div class="trust-item"><span class="check">✓</span><span data-vi>Song ngữ Việt / Anh</span><span data-en>Bilingual VI / EN</span></div>
-    <div class="trust-item"><span class="check">✓</span><span data-vi>Giáo viên trong & ngoài nước</span><span data-en>Local & foreign teachers</span></div>
-    <div class="trust-item"><span class="check">✓</span><span data-vi>Xuất PDF & Excel</span><span data-en>PDF & Excel export</span></div>
+    <div class="trust-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6z"/></svg><span data-vi>Đúng Luật Thuế TNCN 2026</span><span data-en>2026 tax law, built in</span></div>
+    <div class="trust-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m7 14 4-4 3 3 5-6"/></svg><span data-vi>Chính xác đến từng đồng</span><span data-en>Accurate to the dong</span></div>
+    <div class="trust-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span data-vi>Dữ liệu mã hoá trên thiết bị của bạn</span><span data-en>Data encrypted on your device</span></div>
+    <div class="trust-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20"/></svg><span data-vi>Song ngữ Việt – Anh</span><span data-en>Bilingual VI / EN</span></div>
   </div>
 </div>
 
 <!-- FEATURES -->
-<section class="block wrap" id="features">
-  <div class="sec-head">
-    <div class="sec-eyebrow" data-vi>Mọi thứ trung tâm cần</div><div class="sec-eyebrow" data-en>Everything a centre needs</div>
-    <h2 class="sec-h" data-vi>Một công cụ, cả quy trình lương.</h2>
-    <h2 class="sec-h" data-en>One tool, the whole payroll.</h2>
-    <p class="sec-sub" data-vi>Từ lịch dạy hàng tuần đến phiếu lương cuối tháng — không còn bảng tính rối rắm.</p>
-    <p class="sec-sub" data-en>From the weekly timetable to the month-end payslip — no more tangled spreadsheets.</p>
-  </div>
-  <div class="feat-grid">
-    <div class="feat"><div class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg></div>
-      <h3 data-vi>Lịch dạy & lịch tháng</h3><h3 data-en>Timetable & calendar</h3>
-      <p data-vi>Xây lịch hàng tuần theo tiết và ngày. Lịch tháng tự hiện, đánh dấu ngày dạy và ngày bị trừ giờ.</p>
-      <p data-en>Build a weekly timetable by period and day. The monthly calendar fills itself, flagging class days and deductions.</p></div>
-    <div class="feat"><div class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
-      <h3 data-vi>Thuế TNCN 2026 chính xác</h3><h3 data-en>Accurate 2026 PIT</h3>
-      <p data-vi>5 bậc thuế, giảm trừ ₫15.5M và ₫6.2M/người phụ thuộc, BHXH/BHYT/BHTN — tính tự động, đối chiếu phiếu lương thật.</p>
-      <p data-en>Five brackets, ₫15.5M and ₫6.2M/dependent deductions, social/health/unemployment insurance — automatic, checked against a real payslip.</p></div>
-    <div class="feat"><div class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
-      <h3 data-vi>Làm thêm giờ đúng luật</h3><h3 data-en>Overtime, done right</h3>
-      <p data-vi>Chỉ phần phụ trội trên mức thường được miễn thuế & bảo hiểm — ứng dụng tự tách và ghi rõ trên phiếu lương.</p>
-      <p data-en>Only the premium above normal rate is tax & insurance-free — the app splits it out and states it on the payslip.</p></div>
-    <div class="feat"><div class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
-      <h3 data-vi>Giải quyết tranh chấp</h3><h3 data-en>Settle disputes</h3>
-      <p data-vi>Bấm vào một ngày để xem lớp và trừ giờ kèm lý do. Quay lại bất cứ lúc nào khi có khiếu nại.</p>
-      <p data-en>Tap a day to see classes and deduct time with a reason. Go back any time a teacher disputes a figure.</p></div>
-    <div class="feat"><div class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
-      <h3 data-vi>Phiếu lương song ngữ</h3><h3 data-en>Bilingual payslips</h3>
-      <p data-vi>Phiếu lương sạch đẹp với logo trung tâm, tiếng Việt và tiếng Anh, xuất PDF hoặc Excel để gửi.</p>
-      <p data-en>Clean payslips with your centre logo, Vietnamese and English, exported to PDF or Excel to send.</p></div>
-    <div class="feat"><div class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
-      <h3 data-vi>Nhiều người dùng cho trung tâm</h3><h3 data-en>Multiple users per centre</h3>
-      <p data-vi>Trung tâm tự thêm tài khoản cho nhân sự, ai cũng làm việc trên cùng dữ liệu được lưu an toàn.</p>
-      <p data-en>Each centre adds its own staff accounts, all working on the same securely-saved data.</p></div>
+<section id="features">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="eyebrow"><span data-vi>Tính năng</span><span data-en>Features</span></div>
+      <h2><span data-vi>Mọi thứ một trung tâm cần để trả lương đúng.</span><span data-en>Everything a centre needs to pay teachers correctly.</span></h2>
+      <p><span data-vi>Từ lịch dạy đến phiếu lương cuối cùng — không còn bảng tính, không còn lo sai thuế.</span><span data-en>From the weekly timetable to the final payslip — no spreadsheets, no tax guesswork.</span></p>
+    </div>
+
+    <div class="feat-grid">
+      <!-- big: schedule + attendance with mini visual -->
+      <div class="card big reveal">
+        <div>
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/></svg></div>
+          <h3><span data-vi>Lịch dạy & điểm danh</span><span data-en>Schedule & attendance</span></h3>
+          <p><span data-vi>Đặt lịch dạy hàng tuần một lần. Lịch tự trải ra cả tháng. Trừ thời gian khi giáo viên đến muộn hay nghỉ — đủ để giải quyết mọi tranh chấp về giờ dạy.</span>
+          <span data-en>Set the weekly timetable once; it spreads across the whole month. Dock time when a teacher is late or absent — enough to settle any dispute about hours.</span></p>
+        </div>
+        <div>
+          <div class="mini-cal" id="mini-cal" aria-hidden="true"></div>
+        </div>
+      </div>
+
+      <!-- payslip -->
+      <div class="card reveal">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg></div>
+        <h3><span data-vi>Phiếu lương song ngữ</span><span data-en>Bilingual payslips</span></h3>
+        <p><span data-vi>Phiếu lương theo đúng mẫu Việt Nam, song ngữ Việt–Anh, xuất PDF và Excel chỉ với một cú nhấp.</span><span data-en>Payslips in the proper Vietnamese format, in both languages, exported to PDF and Excel in one click.</span></p>
+      </div>
+
+      <!-- tax -->
+      <div class="card reveal">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.5 9.5 14.5 14.5M14.5 9.5 9.5 14.5"/></svg></div>
+        <h3><span data-vi>Thuế & bảo hiểm 2026</span><span data-en>2026 tax & insurance</span></h3>
+        <p><span data-vi>5 bậc thuế mới, giảm trừ ₫15,5tr, BHXH/BHYT/BHTN và mức trần — tính tự động, đúng Luật 109/2025.</span><span data-en>The new 5 brackets, the ₫15.5M deduction, BHXH/BHYT/BHTN and the caps — all automatic, per Law 109/2025.</span></p>
+      </div>
+
+      <!-- hourly / overtime -->
+      <div class="card reveal">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+        <h3><span data-vi>Trả theo giờ, miễn thuế làm thêm</span><span data-en>Hourly pay, overtime exempt</span></h3>
+        <p><span data-vi>Lương tính thẳng từ giờ dạy trong lịch. Tiền làm thêm giờ được miễn thuế hoàn toàn theo luật 2026.</span><span data-en>Pay comes straight from the hours in the schedule. Overtime is fully tax-exempt under the 2026 law.</span></p>
+      </div>
+
+      <!-- privacy -->
+      <div class="card reveal">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
+        <h3><span data-vi>Riêng tư tuyệt đối</span><span data-en>Private by design</span></h3>
+        <p><span data-vi>Lương của giáo viên được mã hoá và lưu ngay trên thiết bị của bạn. Chúng tôi không bao giờ lưu dữ liệu lương của bạn.</span><span data-en>Teacher salaries are encrypted and stored on your own device. We never hold your payroll data.</span></p>
+      </div>
+
+      <!-- bilingual / centre setup -->
+      <div class="card reveal">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V5h16v2M9 20h6M12 5v15"/><path d="m17 11 3 6h-6z"/></svg></div>
+        <h3><span data-vi>Thương hiệu của trung tâm</span><span data-en>Your centre's brand</span></h3>
+        <p><span data-vi>Tên, địa chỉ, mã số thuế và logo của trung tâm hiện ngay trên đầu mỗi phiếu lương.</span><span data-en>Your centre's name, address, tax code and logo appear at the top of every payslip.</span></p>
+      </div>
+    </div>
   </div>
 </section>
 
-<!-- HOW IT WORKS -->
-<section class="block" id="how" style="background:var(--paper);border-top:1px solid var(--line);border-bottom:1px solid var(--line);">
+<!-- WHY -->
+<section class="why">
   <div class="wrap">
-    <div class="sec-head">
-      <div class="sec-eyebrow" data-vi>Cách hoạt động</div><div class="sec-eyebrow" data-en>How it works</div>
-      <h2 class="sec-h" data-vi>Cách bắt đầu.</h2>
-      <h2 class="sec-h" data-en>How getting started works.</h2>
+    <div class="sec-head reveal">
+      <div class="eyebrow"><span data-vi>Vì sao chọn chúng tôi</span><span data-en>Why centres choose it</span></div>
+      <h2><span data-vi>Ít việc hơn. Ít sai sót hơn. Không tranh cãi.</span><span data-en>Less work. Fewer mistakes. No arguments.</span></h2>
+      <p><span data-vi>Trả lương cho giáo viên đáng lẽ không nên chiếm cả buổi chiều mỗi tháng.</span><span data-en>Paying your teachers shouldn't eat a whole afternoon every month.</span></p>
+    </div>
+    <div class="why-grid">
+      <div class="why-item reveal"><div class="n">01</div><div><h3><span data-vi>Tiết kiệm hàng giờ mỗi tháng</span><span data-en>Save hours every month</span></h3><p><span data-vi>Nhập lịch một lần; phiếu lương tự sẵn sàng. Bỏ hẳn bảng tính chằng chịt công thức.</span><span data-en>Enter the schedule once; payslips are ready on their own. No more tangled spreadsheets.</span></p></div></div>
+      <div class="why-item reveal"><div class="n">02</div><div><h3><span data-vi>Không còn sai thuế hay bảo hiểm</span><span data-en>No more tax or insurance errors</span></h3><p><span data-vi>Bộ tính thuế đã được kiểm tra đến từng đồng so với phiếu lương thật theo luật 2026.</span><span data-en>The tax engine is checked to the dong against a real payslip on the 2026 law.</span></p></div></div>
+      <div class="why-item reveal"><div class="n">03</div><div><h3><span data-vi>Giải quyết tranh chấp giờ dạy</span><span data-en>Settle hours disputes</span></h3><p><span data-vi>Lịch điểm danh ghi rõ ngày nào dạy, ngày nào nghỉ — minh bạch cho cả hai bên.</span><span data-en>The attendance calendar records exactly which days were taught — clear for both sides.</span></p></div></div>
+      <div class="why-item reveal"><div class="n">04</div><div><h3><span data-vi>Người Việt và giáo viên nước ngoài đều hiểu</span><span data-en>Vietnamese staff and foreign teachers both understand</span></h3><p><span data-vi>Toàn bộ ứng dụng và phiếu lương đều song ngữ — chuyển VI/EN bất cứ lúc nào.</span><span data-en>The whole app and every payslip are bilingual — switch VI/EN anytime.</span></p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ACCURACY -->
+<section>
+  <div class="wrap acc">
+    <div class="reveal">
+      <div class="eyebrow"><span data-vi>Độ chính xác</span><span data-en>Accuracy</span></div>
+      <h2 style="font-size:clamp(26px,3.4vw,38px);margin:14px 0 16px;"><span data-vi>Đúng biểu thuế 2026 — không phải ước chừng.</span><span data-en>The exact 2026 schedule — not an estimate.</span></h2>
+      <p style="color:var(--ink-soft);font-size:16.5px;">
+        <span data-vi>Năm bậc thuế lũy tiến mới có hiệu lực từ 01/01/2026, giảm trừ gia cảnh ₫15,5 triệu, ₫6,2 triệu/người phụ thuộc, và mức trần bảo hiểm — tất cả được mã hoá sẵn và kiểm tra với phiếu lương chính thức.</span>
+        <span data-en>The five new progressive brackets in force from 1 Jan 2026, the ₫15.5M personal deduction, ₫6.2M per dependant, and the insurance caps — all built in and checked against a real official payslip.</span>
+      </p>
+    </div>
+    <div class="brackets reveal" aria-hidden="true">
+      <div class="br-row"><span class="rng">0 – 10tr</span><div class="br-bar" style="width:14%;">5%</div></div>
+      <div class="br-row"><span class="rng">10 – 30tr</span><div class="br-bar" style="width:30%;">10%</div></div>
+      <div class="br-row"><span class="rng">30 – 60tr</span><div class="br-bar" style="width:55%;">20%</div></div>
+      <div class="br-row"><span class="rng">60 – 100tr</span><div class="br-bar" style="width:80%;">30%</div></div>
+      <div class="br-row"><span class="rng">> 100tr</span><div class="br-bar" style="width:100%;">35%</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW -->
+<section style="background:var(--paper);border-top:1px solid var(--line);border-bottom:1px solid var(--line);">
+  <div class="wrap">
+    <div class="sec-head center reveal">
+      <div class="eyebrow"><span data-vi>Bắt đầu thế nào</span><span data-en>How it works</span></div>
+      <h2><span data-vi>Sẵn sàng trong bốn bước.</span><span data-en>Up and running in four steps.</span></h2>
     </div>
     <div class="steps">
-      <div class="step"><div class="step-n">1</div><h3 data-vi>Đăng ký</h3><h3 data-en>Register</h3>
-        <p data-vi>Điền tên trung tâm và email của bạn để đăng ký dùng dịch vụ.</p>
-        <p data-en>Enter your centre name and email to request access.</p></div>
-      <div class="step"><div class="step-n">2</div><h3 data-vi>Thanh toán</h3><h3 data-en>Pay</h3>
-        <p data-vi>Thanh toán phí theo tháng hoặc năm qua chuyển khoản ngân hàng.</p>
-        <p data-en>Pay the monthly or yearly fee by bank transfer.</p></div>
-      <div class="step"><div class="step-n">3</div><h3 data-vi>Nhận mã qua email</h3><h3 data-en>Get your key by email</h3>
-        <p data-vi>Sau khi xác nhận thanh toán (thường trong ít phút đến vài giờ), chúng tôi gửi mã giấy phép đến email của bạn.</p>
-        <p data-en>Once payment is confirmed (usually within minutes to a few hours), we email you your licence key.</p></div>
-      <div class="step"><div class="step-n">4</div><h3 data-vi>Mở khoá & dùng</h3><h3 data-en>Unlock & use</h3>
-        <p data-vi>Nhập email và mã để mở khoá. Dữ liệu được lưu mã hoá trên thiết bị của bạn.</p>
-        <p data-en>Enter your email and key to unlock. Your data is encrypted on your own device.</p></div>
-      <div class="step"><div class="step-n">5</div><h3 data-vi>Gia hạn dễ dàng</h3><h3 data-en>Renew easily</h3>
-        <p data-vi>Trước khi hết hạn, ứng dụng nhắc bạn 3 ngày. Thanh toán lại để nhận mã mới — dữ liệu của bạn luôn được giữ nguyên.</p>
-        <p data-en>The app reminds you 3 days before expiry. Pay again for a new key — your data is always kept.</p></div>
+      <div class="step reveal"><div class="n">1</div><h3><span data-vi>Đăng ký trung tâm</span><span data-en>Register your centre</span></h3><p><span data-vi>Điền tên trung tâm và email của bạn.</span><span data-en>Give your centre name and email.</span></p></div>
+      <div class="step reveal"><div class="n">2</div><h3><span data-vi>Nhận mã giấy phép</span><span data-en>Get your licence key</span></h3><p><span data-vi>Chúng tôi gửi mã qua email để mở khoá ứng dụng.</span><span data-en>We email a key that unlocks the app.</span></p></div>
+      <div class="step reveal"><div class="n">3</div><h3><span data-vi>Thêm giáo viên & lịch</span><span data-en>Add teachers & schedules</span></h3><p><span data-vi>Nhập đơn giá, lịch dạy và mức bảo hiểm.</span><span data-en>Enter rates, timetables and insurance.</span></p></div>
+      <div class="step reveal"><div class="n">4</div><h3><span data-vi>Tạo phiếu lương</span><span data-en>Generate payslips</span></h3><p><span data-vi>Xuất PDF hoặc Excel và chi trả.</span><span data-en>Export to PDF or Excel and pay.</span></p></div>
     </div>
   </div>
 </section>
 
 <!-- PRICING -->
-<section class="block wrap" id="pricing">
-  <div class="price-wrap">
-    <h2 data-vi>Giá đơn giản cho mỗi trung tâm.</h2>
-    <h2 data-en>Simple pricing, per centre.</h2>
-    <p class="psub" data-vi>Một khoản phí cố định hàng tháng. Không tính theo đầu giáo viên. Huỷ bất cứ lúc nào.</p>
-    <p class="psub" data-en>One flat fee each month. Not per teacher. Cancel any time.</p>
-    <div class="price-cards">
-      <div class="price-card">
-        <div class="plan" data-vi>Hàng tháng</div><div class="plan" data-en>Monthly</div>
-        <div class="price-amt">₫300,000<span data-vi>/tháng</span><span data-en>/month</span></div>
-        <ul class="price-feats">
-          <li data-vi>Không giới hạn giáo viên</li><li data-en>Unlimited teachers</li>
-          <li data-vi>Nhiều người dùng cho trung tâm</li><li data-en>Multiple staff accounts</li>
-          <li data-vi>Cập nhật thuế tự động</li><li data-en>Automatic tax updates</li>
+<section id="pricing">
+  <div class="wrap">
+    <div class="sec-head center reveal">
+      <div class="eyebrow"><span data-vi>Giá</span><span data-en>Pricing</span></div>
+      <h2><span data-vi>Một mức giá đơn giản cho cả trung tâm.</span><span data-en>One simple price for the whole centre.</span></h2>
+      <p><span data-vi>Không giới hạn số giáo viên. Huỷ bất cứ lúc nào.</span><span data-en>Unlimited teachers. Cancel anytime.</span></p>
+    </div>
+    <div class="price-wrap">
+      <div class="price reveal">
+        <div class="plan"><span data-vi>Theo tháng</span><span data-en>Monthly</span></div>
+        <div class="amt num">₫300,000<span data-vi>/tháng</span><span data-en>/month</span></div>
+        <div class="save" style="visibility:hidden;">.</div>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg><span data-vi>Không giới hạn giáo viên & phiếu lương</span><span data-en>Unlimited teachers & payslips</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg><span data-vi>Thuế & bảo hiểm 2026 đầy đủ</span><span data-en>Full 2026 tax & insurance</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg><span data-vi>Xuất PDF & Excel</span><span data-en>PDF & Excel export</span></li>
         </ul>
+        <a href="/auth.html" class="btn btn-ghost" style="width:100%;justify-content:center;"><span data-vi>Chọn gói tháng</span><span data-en>Choose monthly</span></a>
       </div>
-      <div class="price-card featured">
-        <div class="plan" data-vi>Hàng năm <span class="save-tag">tiết kiệm 2 tháng</span></div><div class="plan" data-en>Yearly <span class="save-tag">2 months free</span></div>
-        <div class="price-amt">₫3,000,000<span data-vi>/năm</span><span data-en>/year</span></div>
-        <ul class="price-feats">
-          <li data-vi>Mọi thứ của gói tháng</li><li data-en>Everything in Monthly</li>
-          <li data-vi>Thanh toán một lần, tiết kiệm hơn</li><li data-en>Pay once, save more</li>
-          <li data-vi>Ưu tiên hỗ trợ</li><li data-en>Priority support</li>
+      <div class="price feature reveal">
+        <div class="tag"><span data-vi>Tiết kiệm 2 tháng</span><span data-en>Save 2 months</span></div>
+        <div class="plan"><span data-vi>Theo năm</span><span data-en>Yearly</span></div>
+        <div class="amt num">₫3,000,000<span data-vi>/năm</span><span data-en>/year</span></div>
+        <div class="save"><span data-vi>Tương đương ₫250,000/tháng</span><span data-en>That's ₫250,000/month</span></div>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg><span data-vi>Mọi thứ trong gói tháng</span><span data-en>Everything in monthly</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg><span data-vi>Hai tháng miễn phí</span><span data-en>Two months free</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg><span data-vi>Ưu tiên hỗ trợ</span><span data-en>Priority support</span></li>
         </ul>
+        <a href="/auth.html" class="btn btn-solid" style="width:100%;justify-content:center;"><span data-vi>Chọn gói năm</span><span data-en>Choose yearly</span></a>
       </div>
     </div>
-    <p style="font-size:12.5px;color:#88a39c;margin-top:24px;" data-vi>* Giá tham khảo trong giai đoạn thử nghiệm — sẽ xác nhận khi ra mắt.</p>
-    <p style="font-size:12.5px;color:#88a39c;margin-top:24px;" data-en>* Indicative pricing during the pilot — confirmed at launch.</p>
   </div>
 </section>
 
 <!-- FINAL CTA -->
-<section class="cta-final wrap">
-  <h2 data-vi>Sẵn sàng đơn giản hoá lương giáo viên?</h2>
-  <h2 data-en>Ready to simplify teacher payroll?</h2>
-  <p data-vi>Đăng ký để dùng thử và trở thành một trong những trung tâm đầu tiên.</p>
-  <p data-en>Sign up to try it and be one of the first centres on board.</p>
-  <button class="btn btn-solid btn-lg" onclick="openModal('register')"><span data-vi>Tạo tài khoản trung tâm</span><span data-en>Create your centre account</span></button>
+<section style="padding-top:0;">
+  <div class="wrap">
+    <div class="cta-band reveal">
+      <h2><span data-vi>Sẵn sàng trả lương đúng cho giáo viên?</span><span data-en>Ready to pay your teachers right?</span></h2>
+      <p><span data-vi>Tạo tài khoản trung tâm hôm nay, hoặc xem thử bản demo trước khi quyết định.</span><span data-en>Create your centre account today, or click through the live demo first.</span></p>
+      <div style="display:flex;gap:13px;justify-content:center;flex-wrap:wrap;">
+        <a href="/auth.html" class="btn btn-solid btn-lg"><span data-vi>Tạo tài khoản trung tâm</span><span data-en>Create your centre account</span></a>
+        <a href="/index.html?demo=1" class="btn btn-ghost btn-lg"><span data-vi>Xem bản demo</span><span data-en>Open the demo</span></a>
+      </div>
+    </div>
+  </div>
 </section>
 
 <footer>
-  <div class="wrap">
-    <div class="foot-in">
-      <div class="logo"><div class="logo-mark">L</div><span data-vi>Lương Giáo Viên</span><span data-en>Teacher Payroll</span></div>
-      <div data-vi>© 2026 · Công cụ tính lương cho trung tâm ngoại ngữ</div>
-      <div data-en>© 2026 · Payroll for language centres</div>
-    </div>
-    <div class="disc">
-      <span data-vi><b>Lưu ý:</b> Đây là công cụ tính toán hỗ trợ. Các số liệu là ước tính dựa trên biểu thuế 2026 và thông tin nhập vào. Trung tâm chịu trách nhiệm kiểm tra và kê khai thuế, bảo hiểm chính xác. Vui lòng đối chiếu quy định hiện hành và kế toán trước khi chi trả.</span>
-      <span data-en><b>Note:</b> This is a calculation aid. Figures are estimates based on published 2026 rates and the details entered. The centre remains responsible for verifying and filing correct tax and insurance. Confirm against current law and an accountant before payment.</span>
-    </div>
+  <div class="wrap foot-in">
+    <div class="brand" style="font-size:15px;"><span class="mark" style="width:30px;height:30px;font-size:15px;">₫</span> Lương Giáo Viên · Teacher Payroll</div>
+    <div><span data-vi>Công cụ hỗ trợ tính toán theo Luật Thuế TNCN 2026. Trung tâm tự kiểm tra trước khi chi trả.</span><span data-en>A calculation aid based on the 2026 PIT Law. Centres verify before payment.</span></div>
   </div>
 </footer>
 
-<!-- AUTH MODAL -->
-<div class="modal-bg" id="modal">
-  <div class="modal">
-    <span class="modal-close" onclick="closeModal()">×</span>
-    <div id="m-login">
-      <h3 data-vi>Đăng nhập</h3><h3 data-en>Log in</h3>
-      <p class="msub" data-vi>Vào trung tâm của bạn.</p><p class="msub" data-en>Access your centre.</p>
-      <label data-vi>Email</label><label data-en>Email</label>
-      <input type="email" placeholder="ten@trungtam.vn">
-      <label data-vi>Mật khẩu</label><label data-en>Password</label>
-      <input type="password" placeholder="••••••••">
-      <button class="btn btn-solid" onclick="demoNote()"><span data-vi>Đăng nhập</span><span data-en>Log in</span></button>
-      <div class="modal-switch"><span data-vi>Chưa có tài khoản?</span><span data-en>No account yet?</span> <a onclick="showForm('register')"><span data-vi>Đăng ký</span><span data-en>Register</span></a></div>
-    </div>
-    <div id="m-register" style="display:none;">
-      <h3 data-vi>Tạo tài khoản trung tâm</h3><h3 data-en>Create your centre</h3>
-      <p class="msub" data-vi>Bắt đầu quản lý lương giáo viên.</p><p class="msub" data-en>Start managing teacher payroll.</p>
-      <label data-vi>Tên trung tâm</label><label data-en>Centre name</label>
-      <input type="text" placeholder="Greenfield Language Centre">
-      <label data-vi>Email</label><label data-en>Email</label>
-      <input type="email" placeholder="ten@trungtam.vn">
-      <label data-vi>Mật khẩu</label><label data-en>Password</label>
-      <input type="password" placeholder="••••••••">
-      <button class="btn btn-solid" onclick="demoNote()"><span data-vi>Tạo tài khoản</span><span data-en>Create account</span></button>
-      <div class="modal-switch"><span data-vi>Đã có tài khoản?</span><span data-en>Already have one?</span> <a onclick="showForm('login')"><span data-vi>Đăng nhập</span><span data-en>Log in</span></a></div>
-    </div>
-    <div class="modal-note" id="demo-note" style="display:none;">
-      <span data-vi>Sau khi đăng ký và thanh toán, chúng tôi sẽ gửi mã giấy phép đến email của bạn (thường trong ít phút đến vài giờ) để mở khoá ứng dụng.</span>
-      <span data-en>After you register and pay, we'll email your licence key (usually within minutes to a few hours) to unlock the app.</span>
-    </div>
-  </div>
-</div>
-
 <script>
-  function setLang(l, btn){
-    document.body.className = l==='en' ? 'en' : '';
+  /* ---------- language ---------- */
+  function setLang(l){
     document.documentElement.lang = l;
-    document.querySelectorAll('.lang button').forEach(b=>b.classList.remove('on'));
-    btn.classList.add('on');
+    document.getElementById('lang-vi').classList.toggle('on', l==='vi');
+    document.getElementById('lang-en').classList.toggle('on', l==='en');
+    try{ render(); }catch(e){}
   }
-  function openModal(which){ document.getElementById('modal').classList.add('open'); showForm(which); }
-  function closeModal(){ document.getElementById('modal').classList.remove('open'); document.getElementById('demo-note').style.display='none'; }
-  function showForm(which){
-    document.getElementById('m-login').style.display = which==='login'?'block':'none';
-    document.getElementById('m-register').style.display = which==='register'?'block':'none';
-    document.getElementById('demo-note').style.display='none';
+
+  /* ---------- live payslip (real 2026 tax math) ---------- */
+  var RATES = { personal:15500000, dependent:6200000, si:0.08, hi:0.015,
+    brackets:[[10e6,.05],[30e6,.10],[60e6,.20],[100e6,.30],[Infinity,.35]] };
+  function pit(t){ if(t<=0) return 0; var tax=0, prev=0; for(var i=0;i<RATES.brackets.length;i++){ var c=RATES.brackets[i][0], r=RATES.brackets[i][1]; if(t>prev){ tax+=(Math.min(t,c)-prev)*r; prev=c; } else break; } return tax; }
+  var RATE=450000, ALLOW=3000000, INSBASE=6000000;
+  function vnd(n){ return "₫"+Math.round(n).toLocaleString("en-US"); }
+  function render(){
+    var hrs = +document.getElementById('hrs').value;
+    var teach = hrs*RATE;
+    var gross = teach + ALLOW;
+    var ins = INSBASE*(RATES.si+RATES.hi);            // BHXH + BHYT (foreign teacher: no BHTN)
+    var taxable = Math.max(0, gross - ins - RATES.personal);
+    var tax = pit(taxable);
+    var net = gross - ins - tax;
+    document.getElementById('o-hours').textContent = hrs;
+    document.getElementById('o-hours2').textContent = hrs;
+    document.getElementById('o-teach').textContent = vnd(teach);
+    document.getElementById('o-ins').textContent = "−"+vnd(ins);
+    document.getElementById('o-tax').textContent = "−"+vnd(tax);
+    document.getElementById('o-net').textContent = vnd(net);
+    var p = (hrs-20)/(130-20)*100;
+    document.getElementById('hrs').style.setProperty('--p', p+'%');
   }
-  function demoNote(){ document.getElementById('demo-note').style.display='block'; }
-  document.getElementById('modal').addEventListener('click', e=>{ if(e.target.id==='modal') closeModal(); });
+  document.getElementById('hrs').addEventListener('input', render);
+  render();
+
+  /* ---------- nav shadow ---------- */
+  var nav=document.getElementById('nav');
+  window.addEventListener('scroll', function(){ nav.classList.toggle('scrolled', window.scrollY>10); });
+
+  /* ---------- payslip parallax tilt ---------- */
+  var slip=document.getElementById('slip');
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(!reduce){
+    var stage=slip.parentElement;
+    stage.addEventListener('mousemove', function(e){
+      var r=stage.getBoundingClientRect();
+      var px=(e.clientX-r.left)/r.width-0.5, py=(e.clientY-r.top)/r.height-0.5;
+      slip.style.transform='rotateY('+(px*7)+'deg) rotateX('+(-py*7)+'deg) translateZ(0)';
+    });
+    stage.addEventListener('mouseleave', function(){ slip.style.transform='rotateY(0) rotateX(0)'; });
+  }
+
+  /* ---------- mini attendance calendar visual ---------- */
+  (function(){
+    var cal=document.getElementById('mini-cal'); if(!cal) return;
+    var pattern=[0,1,0,1,0,1,0, 1,1,1,2,1,0,0, 1,1,0,1,1,1,0, 1,2,1,1,0,1,0]; // 0 none,1 work,2 miss
+    pattern.forEach(function(p){ var d=document.createElement('div'); d.className='d'+(p===1?' work':p===2?' miss':''); d.innerHTML='<span class="dot"></span>'; cal.appendChild(d); });
+  })();
+
+  /* ---------- scroll reveal ---------- */
+  var io=new IntersectionObserver(function(entries){
+    entries.forEach(function(en){ if(en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target); } });
+  },{threshold:.14});
+  document.querySelectorAll('.reveal').forEach(function(el){ io.observe(el); });
 </script>
 </body>
 </html>
