@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lương Giáo Viên · Teacher Payroll</title>
+<style>
+  :root{
+    --ink:#16202a; --ink-soft:#5a6b78; --line:#e4e9ed; --line-soft:#eef2f5;
+    --paper:#ffffff; --canvas:#f6f8f9; --teal:#0d7a6f; --teal-soft:#e6f3f1;
+    --gold:#c08a2d; --gold-soft:#f8efe0; --rose:#b3473f; --rose-soft:#f7e9e7;
+    --radius:14px; --shadow:0 1px 3px rgba(20,32,42,.06),0 8px 24px rgba(20,32,42,.05);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    background:var(--canvas);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:920px;margin:0 auto;padding:20px 16px 80px;}
+  h1,h2,h3{font-weight:600;letter-spacing:-.01em;line-height:1.2;}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;}
+  input,select{font-family:inherit;font-size:14px;width:100%;height:40px;padding:0 12px;
+    border:1px solid var(--line);border-radius:9px;background:var(--paper);color:var(--ink);}
+  input:focus,select:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px var(--teal-soft);}
+  label.fl{display:block;font-size:12px;font-weight:500;color:var(--ink-soft);margin-bottom:5px;}
+
+  /* top bar */
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:22px;}
+  .brand{display:flex;align-items:center;gap:11px;min-width:0;}
+  .brandlogo{width:42px;height:42px;border-radius:11px;background:var(--teal);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:17px;overflow:hidden;flex-shrink:0;}
+  .brandlogo img{width:100%;height:100%;object-fit:contain;background:#fff;}
+  .brandname{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .brandsub{font-size:12px;color:var(--ink-soft);}
+  .langtog{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;flex-shrink:0;background:var(--paper);}
+  .langtog button{padding:8px 13px;font-size:13px;font-weight:600;color:var(--ink-soft);}
+  .langtog button.on{background:var(--ink);color:#fff;}
+
+  /* cards */
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);}
+  .card-pad{padding:20px;}
+  .grid{display:grid;gap:14px;}
+  @media(min-width:560px){.cols2{grid-template-columns:1fr 1fr;}.cols3{grid-template-columns:1fr 1fr 1fr;}}
+
+  .eyebrow{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--teal);margin-bottom:3px;}
+  .muted{color:var(--ink-soft);font-size:12px;}
+
+  /* roster */
+  .rosterhead{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--line-soft);}
+  .trow{display:flex;align-items:center;gap:13px;padding:14px 20px;border-bottom:1px solid var(--line-soft);cursor:pointer;transition:background .12s;}
+  .trow:last-child{border-bottom:none;}
+  .trow:hover{background:var(--canvas);}
+  .tav{width:38px;height:38px;border-radius:50%;background:var(--teal-soft);color:var(--teal);
+    display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px;flex-shrink:0;}
+  .pill{font-size:10.5px;font-weight:600;padding:2px 7px;border-radius:20px;letter-spacing:.02em;}
+  .pill-gold{background:var(--gold-soft);color:var(--gold);}
+  .pill-teal{background:var(--teal-soft);color:var(--teal);}
+
+  .btn{display:inline-flex;align-items:center;gap:7px;height:40px;padding:0 16px;border-radius:10px;
+    font-size:14px;font-weight:600;transition:.12s;}
+  .btn-primary{background:var(--teal);color:#fff;}
+  .btn-primary:hover{background:#0a6359;}
+  .btn-ghost{background:var(--paper);border:1px solid var(--line);color:var(--ink);}
+  .btn-ghost:hover{border-color:var(--ink-soft);}
+  .btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;}
+  .btn svg{width:16px;height:16px;}
+
+  .back{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:16px;}
+  .back svg{width:16px;height:16px;flex-shrink:0;} .back:hover{color:var(--ink);}
+
+  .section-title{font-size:13px;font-weight:600;margin:22px 0 10px;display:flex;align-items:center;gap:8px;}
+
+  /* schedule table */
+  .sched-h,.sched-r{display:grid;grid-template-columns:1.5fr .8fr .8fr 1.1fr 34px;gap:7px;align-items:center;}
+  .sched-h{font-size:11px;color:var(--ink-soft);font-weight:500;padding:0 2px 7px;}
+  .sched-r{margin-bottom:7px;}
+  .sched-r input,.sched-r select{height:36px;font-size:13px;padding:0 8px;}
+  .iconbtn{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--ink-soft);border:1px solid var(--line);}
+  .iconbtn:hover{color:var(--rose);border-color:var(--rose);}
+
+  /* breakdown */
+  .bd-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--line-soft);font-size:14px;}
+  .bd-row .lab{color:var(--ink-soft);}
+  .bd-row .val{font-weight:600;font-variant-numeric:tabular-nums;}
+  .bd-row.neg .val{color:var(--rose);}
+  .bd-row.pos .val{color:var(--teal);}
+  .bd-total{display:flex;justify-content:space-between;align-items:center;padding-top:14px;margin-top:4px;}
+  .bd-total .lab{font-size:15px;font-weight:600;}
+  .bd-total .val{font-size:22px;font-weight:700;color:var(--teal);font-variant-numeric:tabular-nums;}
+
+  .toggle-row{display:flex;align-items:center;gap:9px;padding:9px 0;border-bottom:1px solid var(--line-soft);font-size:13.5px;}
+  .toggle-row:last-child{border-bottom:none;}
+  .toggle-row input{width:auto;height:auto;}
+  .hint{font-size:11px;color:var(--ink-soft);margin-top:5px;line-height:1.45;}
+
+  .disclaimer{background:var(--gold-soft);border:1px solid #ecd9b0;border-radius:11px;padding:13px 15px;font-size:12px;color:#7a5a1c;line-height:1.5;margin-top:18px;}
+  .disclaimer b{color:#5e4415;}
+
+  /* payslip */
+  .slip{background:#fff;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);}
+  .slip-head{padding:22px 24px;border-bottom:2px solid var(--ink);display:flex;justify-content:space-between;align-items:flex-start;gap:16px;}
+  .slip-logo{width:54px;height:54px;border-radius:11px;background:var(--teal);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:20px;overflow:hidden;flex-shrink:0;}
+  .slip-logo img{width:100%;height:100%;object-fit:contain;background:#fff;}
+  .slip-title{font-size:17px;font-weight:700;letter-spacing:-.01em;}
+  .slip-title .vi{display:block;}
+  .slip-title .en{display:block;font-size:12px;font-weight:500;color:var(--ink-soft);letter-spacing:0;margin-top:1px;}
+  .slip-period{font-size:12px;color:var(--ink-soft);margin-top:4px;}
+  .slip-meta{padding:16px 24px;border-bottom:1px solid var(--line-soft);display:grid;gap:8px 20px;}
+  @media(min-width:560px){.slip-meta{grid-template-columns:1fr 1fr;}}
+  .meta-item{font-size:12.5px;}
+  .meta-item .k{color:var(--ink-soft);}
+  .meta-item .v{font-weight:600;}
+  .slip-cols{display:grid;gap:0;}
+  @media(min-width:560px){.slip-cols{grid-template-columns:1fr 1fr;}.slip-cols>div:first-child{border-right:1px solid var(--line-soft);}}
+  .slip-colhead{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--teal);padding:14px 24px 8px;}
+  .slip-line{display:flex;justify-content:space-between;gap:12px;padding:7px 24px;font-size:13px;}
+  .slip-line .l{color:var(--ink-soft);}
+  .slip-line .l .en{display:block;font-size:10.5px;opacity:.75;}
+  .slip-line .a{font-weight:600;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap;}
+  .slip-line.sub{border-top:1px solid var(--line-soft);margin-top:4px;padding-top:10px;font-weight:700;}
+  .slip-line.sub .l{color:var(--ink);font-weight:700;}
+  .slip-net{background:var(--teal-soft);padding:16px 24px;display:flex;justify-content:space-between;align-items:center;}
+  .slip-net .l{font-size:13px;font-weight:700;color:var(--teal);}
+  .slip-net .l .en{display:block;font-size:10.5px;font-weight:500;}
+  .slip-net .a{font-size:22px;font-weight:700;color:var(--teal);font-variant-numeric:tabular-nums;}
+  .slip-sign{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:24px;}
+  .sign-box{text-align:center;font-size:12px;}
+  .sign-box .role{font-weight:600;}
+  .sign-box .sub{color:var(--ink-soft);font-size:10.5px;}
+  .sign-box .line{margin-top:42px;border-top:1px solid var(--ink-soft);padding-top:5px;}
+  .slip-foot{padding:13px 24px;border-top:1px solid var(--line-soft);font-size:10.5px;color:var(--ink-soft);line-height:1.5;}
+
+  .hidden{display:none!important;}
+  .add-link{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--teal);margin-top:8px;}
+
+  /* weekly builder */
+  .wk-h,.wk-r{display:grid;grid-template-columns:1.4fr .8fr .9fr .9fr 1.1fr 34px;gap:7px;align-items:center;}
+  .wk-h{font-size:11px;color:var(--ink-soft);font-weight:500;padding:0 2px 8px;}
+  .wk-r{margin-bottom:7px;}
+  .wk-r input,.wk-r select{height:36px;font-size:13px;padding:0 8px;}
+  /* timetable grid */
+  .tt{display:grid;grid-template-columns:178px repeat(7,minmax(78px,1fr));gap:4px 4px;min-width:740px;align-items:center;}
+  .tt-th{font-size:11px;font-weight:600;color:var(--ink-soft);text-align:center;padding:4px 0;}
+  .tt-th.tt-time{text-align:left;}
+  .tt-time-cell{display:flex;align-items:center;gap:4px;}
+  .tt-time-cell input{height:34px;font-size:11px;padding:0 4px;min-width:0;}
+  .tt-dash{color:var(--ink-soft);font-size:12px;}
+  .tt-delrow{width:24px;height:24px;flex-shrink:0;border:none;}
+  .tt-delrow svg{width:13px;height:13px;}
+  .tt-cell input{height:38px;font-size:12px;padding:0 6px;text-align:center;border-color:var(--line-soft);}
+  .tt-cell.filled input{background:var(--teal-soft);border-color:var(--teal-soft);font-weight:600;color:var(--teal);}
+  /* other income */
+  .oi-h,.oi-r{display:grid;grid-template-columns:1.5fr 1fr .7fr 1fr 34px;gap:7px;align-items:center;}
+  .oi-h{font-size:11px;color:var(--ink-soft);font-weight:500;padding:0 2px 4px;}
+  .oi-h span:nth-child(4){text-align:right;}
+  .oi-r{margin-bottom:7px;}
+  .oi-r input{height:36px;font-size:13px;padding:0 8px;}
+  .oi-amt{font-size:13px;font-weight:600;text-align:right;font-variant-numeric:tabular-nums;color:var(--teal);}
+
+  /* calendar */
+  .cal-nav{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;}
+  .cal-dow{text-align:center;font-size:11px;font-weight:600;color:var(--ink-soft);padding-bottom:4px;}
+  .cal-cell{aspect-ratio:1;border:1px solid var(--line-soft);border-radius:9px;padding:5px 6px;position:relative;display:flex;flex-direction:column;min-height:44px;}
+  .cal-cell.empty{border:none;}
+  .cal-cell.has{cursor:pointer;border-color:var(--line);background:var(--canvas);}
+  .cal-cell.has:hover{border-color:var(--teal);}
+  .cal-num{font-size:12px;font-weight:600;color:var(--ink);}
+  .cal-dots{display:flex;flex-wrap:wrap;gap:3px;margin-top:auto;}
+  .cal-dot{width:7px;height:7px;border-radius:50%;background:var(--teal);display:inline-block;}
+  .cal-dot.late{background:var(--rose);}
+
+  /* modal */
+  .modal-bg{position:fixed;inset:0;background:rgba(20,32,42,.45);display:flex;align-items:center;justify-content:center;padding:20px;z-index:50;}
+  .modal{background:var(--paper);border-radius:var(--radius);box-shadow:0 20px 60px rgba(0,0,0,.25);width:100%;max-width:440px;padding:20px;max-height:85vh;overflow:auto;}
+  .modal-head{margin-bottom:14px;}
+  .day-item{padding:14px;border:1px solid var(--line-soft);border-radius:11px;margin-bottom:12px;}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script>
+/* ===== Teacher Payroll · Vietnam 2026 ===== */
+
+/* ---------- i18n ---------- */
+const I18N = {
+  en:{
+    appsub:"Teacher payroll",
+    teachers:"Teachers", monthlytotal:"Monthly total", addteacher:"Add teacher",
+    centersetup:"Center setup", setup:"Setup",
+    back:"Back to teachers",
+    name:"Name", taxstatus:"Tax status", resident:"Resident (progressive)",
+    nonresident:"Non-resident (flat 20%)", paidin:"Paid in", vnddirect:"VND direct",
+    usdrate:"USD rate → VND", ratehour:"Rate / hour (VND)", usdhour:"USD / hour",
+    exchange:"₫ per $1", dependents:"Dependents", taxnumber:"Tax number (MST)",
+    taxnumberph:"optional", insbase:"Insurance base salary",
+    insbasehint:"Often a fixed contract figure, not gross. Leave blank to use gross.",
+    schedule:"Schedule", schedulehint:"set day type & multiplier per class",
+    class:"class", sched:"sched", late:"late", daytype:"day type ×", addclass:"add class",
+    normal:"Normal", restday:"Rest day ×2", holiday:"Public holiday ×3", custom:"Custom",
+    contributions:"Contributions", showapply:"show / apply",
+    si:"Social insurance — 8%", hi:"Health insurance — 1.5%", ui:"Unemployment — 1%",
+    uihint:"Switch off for expat teachers (→ 9.5%).",
+    holidaydisplay:"Holiday pay display", breakpremium:"Break out premium portion",
+    premiumhint:"On: normal + premium shown separately (premium is tax & insurance-free). Off: one flat line.",
+    applycaps:"Apply salary caps", capshint:"SI/HI cap ₫46.8M · UI cap ₫106.2M.",
+    hourlyrate:"Hourly rate", regularpay:"Regular pay (taxable)",
+    latededuct:"Lateness deduction", holidaypremium:"Holiday premium (tax/ins-free)",
+    gross:"Gross", pit:"Personal income tax", net:"Net take-home",
+    viewpayslip:"View payslip", exportpdf:"Export PDF", exportexcel:"Export Excel",
+    /* center setup */
+    centername:"School / Center name", centeraddr:"Address", centertax:"Center tax code",
+    setlogo:"Upload logo", logoset:"Logo set", savesetup:"Save setup",
+    setupintro:"These appear on every payslip header.",
+    /* payslip */
+    payslip:"Payslip", income:"Income", deductions:"Deductions",
+    teachingpay:"Teaching pay", allowance:"Allowance", totalincome:"Total income",
+    totaldeduct:"Total deductions", employeeid:"Employee ID", department:"Department",
+    position:"Position", period:"Period", preparer:"Prepared by", receiver:"Received by",
+    signdate:"(sign & date)", insbaseLabel:"Insurance base",
+    taxableincome:"Taxable income", deduction:"Family deduction",
+    disclaimer:"<b>This is a calculation tool.</b> Figures are estimates based on published 2026 rates and the details entered. The center remains responsible for verifying and filing correct tax and insurance. Confirm against current law before payment.",
+    slipfoot:"Generated as a calculation aid · 2026 PIT Law (Law 109/2025/QH15) · rates as entered · employer verifies before payment.",
+    taxbasis:"Tax basis: 2026 PIT Law", position_val:"English teacher",
+    weeklysched:"Weekly schedule", weeklyhint:"the classes this teacher repeats each week",
+    addslot:"Add class slot", day:"Day", starttime:"Start", endtime:"End",
+    calendar:"Calendar", thismonth:"This month", deducted:"deducted",
+    markdeduction:"Deduct time", deductmins:"Minutes to deduct", reasonopt:"Reason (optional)",
+    save:"Save", remove:"Remove", noclasses:"No classes this day",
+    minutesthismonth:"Taught this month", scheduledmin:"Scheduled", workedmin:"Worked",
+    profile:"Profile", overview:"Overview",
+    allowancename:"Allowance name", allowancenameph:"e.g. Housing, Transport",
+    otherincome:"Other income", otherhint:"extra paid activities (events, invigilation) at the school's own rates",
+    incomename:"Income name", incomenameph:"e.g. Event hosting", amountvnd:"Rate (VND)", hourslabel:"Hours", addincome:"Add income line",
+    overtime:"Overtime", overtimehint:"premium above normal rate is tax & insurance-free (2026 law)",
+    otname:"Description", otnameph:"e.g. Saturday exam prep", otrate:"OT rate", othours:"Hours", addovertime:"Add overtime",
+    otnormalpart:"Overtime — normal portion (taxable)", otpremiumpart:"Overtime premium (tax & insurance-free)",
+    exemptnote:"Premium above normal rate — exempt from PIT & insurance under 2026 law",
+  },
+  vi:{
+    appsub:"Lương giáo viên",
+    teachers:"Giáo viên", monthlytotal:"Tổng tháng", addteacher:"Thêm giáo viên",
+    centersetup:"Thiết lập trung tâm", setup:"Thiết lập",
+    back:"Về danh sách",
+    name:"Họ tên", taxstatus:"Tình trạng thuế", resident:"Cư trú (lũy tiến)",
+    nonresident:"Không cư trú (20%)", paidin:"Trả bằng", vnddirect:"VND trực tiếp",
+    usdrate:"Tỷ giá USD → VND", ratehour:"Đơn giá / giờ (VND)", usdhour:"USD / giờ",
+    exchange:"₫ trên $1", dependents:"Người phụ thuộc", taxnumber:"Mã số thuế (MST)",
+    taxnumberph:"không bắt buộc", insbase:"Lương đóng bảo hiểm",
+    insbasehint:"Thường là mức cố định theo hợp đồng, không phải lương gộp. Để trống để dùng lương gộp.",
+    schedule:"Lịch dạy", schedulehint:"chọn loại ngày & hệ số mỗi lớp",
+    class:"lớp", sched:"dạy", late:"muộn", daytype:"loại ngày ×", addclass:"thêm lớp",
+    normal:"Thường", restday:"Ngày nghỉ ×2", holiday:"Lễ ×3", custom:"Tùy chỉnh",
+    contributions:"Các khoản đóng góp", showapply:"hiển thị / áp dụng",
+    si:"BHXH — 8%", hi:"BHYT — 1.5%", ui:"BHTN — 1%",
+    uihint:"Tắt cho giáo viên nước ngoài (→ 9.5%).",
+    holidaydisplay:"Hiển thị lương lễ", breakpremium:"Tách phần phụ trội",
+    premiumhint:"Bật: hiện phần thường + phụ trội riêng (phụ trội miễn thuế & bảo hiểm). Tắt: một dòng gộp.",
+    applycaps:"Áp dụng mức trần", capshint:"BHXH/BHYT trần ₫46.8M · BHTN trần ₫106.2M.",
+    hourlyrate:"Đơn giá giờ", regularpay:"Lương thường (chịu thuế)",
+    latededuct:"Khấu trừ đi muộn", holidaypremium:"Phụ trội lễ (miễn thuế/BH)",
+    gross:"Tổng thu nhập", pit:"Thuế TNCN", net:"Thực lĩnh",
+    viewpayslip:"Xem phiếu lương", exportpdf:"Xuất PDF", exportexcel:"Xuất Excel",
+    centername:"Tên trường / trung tâm", centeraddr:"Địa chỉ", centertax:"Mã số thuế trung tâm",
+    setlogo:"Tải logo", logoset:"Đã có logo", savesetup:"Lưu thiết lập",
+    setupintro:"Các thông tin này hiện trên đầu mỗi phiếu lương.",
+    payslip:"Phiếu lương", income:"Các khoản thu nhập", deductions:"Các khoản khấu trừ",
+    teachingpay:"Lương tiết dạy", allowance:"Phụ cấp", totalincome:"Tổng thu nhập",
+    totaldeduct:"Tổng khấu trừ", employeeid:"Mã nhân viên", department:"Đơn vị công tác",
+    position:"Vị trí công việc", period:"Kỳ lương", preparer:"Người lập phiếu", receiver:"Người nhận",
+    signdate:"(ký, ghi rõ họ tên)", insbaseLabel:"Lương đóng BH",
+    taxableincome:"Thu nhập tính thuế", deduction:"Giảm trừ gia cảnh",
+    disclaimer:"<b>Đây là công cụ tính toán.</b> Các số liệu là ước tính dựa trên biểu thuế 2026 và thông tin nhập vào. Trung tâm chịu trách nhiệm kiểm tra và kê khai thuế, bảo hiểm chính xác. Vui lòng đối chiếu quy định hiện hành trước khi chi trả.",
+    slipfoot:"Tạo như công cụ hỗ trợ tính toán · Luật Thuế TNCN 2026 (Luật 109/2025/QH15) · theo mức đã nhập · đơn vị tự kiểm tra trước khi chi trả.",
+    taxbasis:"Cơ sở thuế: Luật Thuế TNCN 2026", position_val:"Giáo viên tiếng Anh",
+    weeklysched:"Lịch dạy hàng tuần", weeklyhint:"các lớp giáo viên dạy lặp lại mỗi tuần",
+    addslot:"Thêm tiết học", day:"Thứ", starttime:"Bắt đầu", endtime:"Kết thúc",
+    calendar:"Lịch", thismonth:"Tháng này", deducted:"đã trừ",
+    markdeduction:"Trừ thời gian", deductmins:"Số phút trừ", reasonopt:"Lý do (tùy chọn)",
+    save:"Lưu", remove:"Xóa", noclasses:"Không có lớp ngày này",
+    minutesthismonth:"Dạy tháng này", scheduledmin:"Theo lịch", workedmin:"Thực dạy",
+    profile:"Hồ sơ", overview:"Tổng quan",
+    allowancename:"Tên phụ cấp", allowancenameph:"vd: Nhà ở, Đi lại",
+    otherincome:"Thu nhập khác", otherhint:"các hoạt động có trả thêm (sự kiện, coi thi) theo mức của trung tâm",
+    incomename:"Tên khoản thu", incomenameph:"vd: Tổ chức sự kiện", amountvnd:"Đơn giá (VND)", hourslabel:"Số giờ", addincome:"Thêm khoản thu",
+    overtime:"Làm thêm giờ", overtimehint:"phần phụ trội trên mức thường được miễn thuế & bảo hiểm (luật 2026)",
+    otname:"Mô tả", otnameph:"vd: Luyện thi thứ Bảy", otrate:"Đơn giá OT", othours:"Số giờ", addovertime:"Thêm làm thêm giờ",
+    otnormalpart:"Làm thêm — phần thường (chịu thuế)", otpremiumpart:"Phụ trội làm thêm (miễn thuế & BH)",
+    exemptnote:"Phần phụ trội trên mức thường — miễn thuế TNCN & bảo hiểm theo luật 2026",
+  }
+};
+let lang = 'vi';
+const t = k => (I18N[lang][k] ?? I18N.en[k] ?? k);
+
+/* ---------- tax constants (2026) — single editable block ---------- */
+const RATES = {
+  personal: 15_500_000,
+  dependent: 6_200_000,
+  si: 0.08, hi: 0.015, ui: 0.01,
+  capSIHI: 46_800_000, capUI: 106_200_000,
+  brackets: [[10e6,.05],[30e6,.10],[50e6,.20],[100e6,.30],[Infinity,.35]],
+  nonResident: 0.20,
+};
+
+/* ---------- state ---------- */
+let center = { name:"Greenfield Language Centre", addr:"", tax:"", logo:null };
+let teachers = [
+  { id:1, name:"Nguyễn Thu Hà", empId:"NQ01", type:"res", cur:"vnd", rate:300000, fx:25000,
+    deps:1, mst:"", insBase:6000000, allowance:3000000, allowanceName:"Phụ cấp kiêm nhiệm",
+    otherIncome:[], overtime:[{name:"Sat exam prep",rate:400000,hours:6}],
+    weekly:[
+      {id:"s1",label:"IELTS prep",dow:1,start:"18:00",end:"20:00",mult:1},
+      {id:"s2",label:"IELTS prep",dow:3,start:"18:00",end:"20:00",mult:1},
+      {id:"s3",label:"General English",dow:5,start:"09:00",end:"11:00",mult:1},
+    ],
+    deductions:{ "2026-06-08_s1":{mins:4,note:"arrived late"} },
+    toggles:{si:true,hi:true,ui:true,split:true,cap:true} },
+  { id:2, name:"Steyn Nathan Byran", empId:"NQ05", type:"res", cur:"usd", rate:18, fx:25000,
+    deps:0, mst:"", insBase:6000000, allowance:3000000, allowanceName:"Housing allowance",
+    otherIncome:[], overtime:[],
+    weekly:[
+      {id:"s1",label:"IELTS prep",dow:2,start:"17:30",end:"19:30",mult:1},
+      {id:"s2",label:"Business English",dow:4,start:"17:30",end:"19:30",mult:1},
+    ],
+    deductions:{},
+    toggles:{si:true,hi:true,ui:false,split:true,cap:true} },
+];
+let nextId = 3;
+let view = { screen:"roster", teacherId:null };
+
+/* ---------- helpers ---------- */
+const vnd = n => "₫" + Math.round(n).toLocaleString("en-US");
+const el = (tag, attrs={}, html="") => {
+  const e = document.createElement(tag);
+  for (const k in attrs){ if(k==="class") e.className=attrs[k]; else e.setAttribute(k,attrs[k]); }
+  if(html) e.innerHTML = html;
+  return e;
+};
+function pit(taxable){
+  if(taxable<=0) return 0;
+  let tax=0, prev=0;
+  for(const [cap,rate] of RATES.brackets){
+    if(taxable>prev){ tax += (Math.min(taxable,cap)-prev)*rate; prev=cap; } else break;
+  }
+  return tax;
+}
+const icon = {
+  plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+  back:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>',
+  chevron:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>',
+  x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+  cog:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+  file:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+  sheet:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>',
+  doc:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>',
+};
+
+/* ---------- calendar helpers ---------- */
+const DOW_LABELS = { en:["Mon","Tue","Wed","Thu","Fri","Sat","Sun"], vi:["T2","T3","T4","T5","T6","T7","CN"] };
+const MONTH_LABELS = {
+  en:["January","February","March","April","May","June","July","August","September","October","November","December"],
+  vi:["Tháng 1","Tháng 2","Tháng 3","Tháng 4","Tháng 5","Tháng 6","Tháng 7","Tháng 8","Tháng 9","Tháng 10","Tháng 11","Tháng 12"]
+};
+let calState = { year:2026, month:5 };
+function minutesBetween(start,end){
+  const [sh,sm]=String(start).split(":").map(Number);
+  const [eh,em]=String(end).split(":").map(Number);
+  return Math.max(0,(eh*60+em)-(sh*60+sm));
+}
+const pad2 = n => String(n).padStart(2,"0");
+const dKey = (y,m,d) => `${y}-${pad2(m+1)}-${pad2(d)}`;
+function monthOccurrences(tch, year, month){
+  const occ=[]; const days=new Date(year,month+1,0).getDate();
+  const rowById = {};
+  (tch.timeRows||[]).forEach(r=> rowById[r.id]=r);
+  (tch.weekly||[]).forEach(slot=>{
+    const row = slot.rowId ? rowById[slot.rowId] : null;
+    const start = row ? row.start : slot.start;
+    const end = row ? row.end : slot.end;
+    for(let d=1; d<=days; d++){
+      let dow=new Date(year,month,d).getDay(); dow=dow===0?7:dow;
+      if(dow===slot.dow){
+        const key=dKey(year,month,d)+"_"+slot.id;
+        const ded=(tch.deductions&&tch.deductions[key])||null;
+        const sched=minutesBetween(start,end);
+        occ.push({date:d,key,slot:{...slot,start,end},sched,ded,worked:Math.max(0,sched-(ded?ded.mins:0))});
+      }
+    }
+  });
+  return occ;
+}
+
+/* ---------- core calculation (from monthly calendar) ---------- */
+function calc(tch){
+  const vndRate = tch.cur==="usd" ? tch.rate*tch.fx : tch.rate;
+  const perMin = vndRate/60;
+  const tg = tch.toggles;
+  const occ = monthOccurrences(tch, calState.year, calState.month);
+
+  let regPay=0, latePay=0, premium=0, flatHoliday=0;
+  occ.forEach(o=>{
+    const m = o.slot.mult||1;
+    const workedBase = o.worked*perMin;
+    const fullBase = o.sched*perMin;
+    latePay += (o.ded?o.ded.mins:0)*perMin;
+    if(m<=1){ regPay += workedBase; }
+    else if(tg.split){ regPay += workedBase; premium += workedBase*(m-1); }
+    else { flatHoliday += workedBase*m; }
+  });
+
+  const teachingTaxable = regPay + flatHoliday;
+  const allowance = +tch.allowance||0;
+  const otherTotal = (tch.otherIncome||[]).reduce((a,o)=>a+((+o.rate||0)*(+o.hours||0)),0);
+
+  // overtime: normal-rate portion is taxable, premium above normal is exempt
+  let otNormal=0, otPremium=0;
+  (tch.overtime||[]).forEach(o=>{
+    const otRateVnd = tch.cur==="usd" ? (+o.rate||0)*tch.fx : (+o.rate||0);
+    const hrs = +o.hours||0;
+    const totalOt = otRateVnd*hrs;
+    const normalPortion = Math.min(otRateVnd, vndRate)*hrs; // capped at normal rate
+    const premiumPortion = Math.max(0, totalOt - normalPortion);
+    otNormal += normalPortion;
+    otPremium += premiumPortion;
+  });
+
+  const taxableBase = teachingTaxable + allowance + otherTotal + otNormal;
+  const premiumTotal = premium + otPremium;
+  const gross = taxableBase + premiumTotal;
+
+  let insSalary = (tch.insBase && tch.insBase>0) ? tch.insBase : taxableBase;
+  const siBase = tg.cap ? Math.min(insSalary, RATES.capSIHI) : insSalary;
+  const uiBase = tg.cap ? Math.min(insSalary, RATES.capUI) : insSalary;
+  const siAmt = tg.si ? siBase*RATES.si : 0;
+  const hiAmt = tg.hi ? siBase*RATES.hi : 0;
+  const uiAmt = tg.ui ? uiBase*RATES.ui : 0;
+  const insTotal = siAmt+hiAmt+uiAmt;
+
+  const familyDeduction = RATES.personal + tch.deps*RATES.dependent;
+  let taxableIncome, pitDue;
+  if(tch.type==="non"){ taxableIncome = taxableBase; pitDue = taxableBase*RATES.nonResident; }
+  else { taxableIncome = Math.max(0, taxableBase - insTotal - familyDeduction); pitDue = pit(taxableIncome); }
+
+  const net = gross - insTotal - pitDue;
+  return { vndRate, perMin, regPay:teachingTaxable, latePay, premium:premiumTotal, gross, otherTotal,
+    otNormal, otPremium, classPremium:premium,
+    siAmt, hiAmt, uiAmt, insTotal, insSalary, familyDeduction, taxableIncome,
+    pitDue, net, allowance };
+}
+
+/* ---------- render dispatch ---------- */
+function render(){
+  const app = document.getElementById("app");
+  app.innerHTML = "";
+  app.appendChild(topbar());
+  if(view.screen==="roster") app.appendChild(rosterScreen());
+  else if(view.screen==="setup") app.appendChild(setupScreen());
+  else if(view.screen==="detail") app.appendChild(detailScreen());
+  else if(view.screen==="payslip") app.appendChild(payslipScreen());
+}
+
+function topbar(){
+  const bar = el("div",{class:"topbar"});
+  const brand = el("div",{class:"brand"});
+  const logo = el("div",{class:"brandlogo"});
+  if(center.logo) logo.innerHTML = `<img src="${center.logo}">`;
+  else logo.textContent = (center.name||"C").trim()[0].toUpperCase();
+  const names = el("div",{},`<div class="brandname">${center.name||"—"}</div><div class="brandsub">${t("appsub")}</div>`);
+  brand.appendChild(logo); brand.appendChild(names);
+
+  const right = el("div",{style:"display:flex;gap:10px;align-items:center;flex-shrink:0;"});
+  const langtog = el("div",{class:"langtog"});
+  ["vi","en"].forEach(l=>{
+    const b = el("button",{class: lang===l?"on":""}, l.toUpperCase());
+    b.onclick = ()=>{ lang=l; render(); };
+    langtog.appendChild(b);
+  });
+  right.appendChild(langtog);
+  bar.appendChild(brand); bar.appendChild(right);
+  return bar;
+}
+
+/* ---------- roster ---------- */
+function rosterScreen(){
+  const frag = document.createDocumentFragment();
+  const card = el("div",{class:"card"});
+  const head = el("div",{class:"rosterhead"});
+  let total = 0; teachers.forEach(tc=> total += calc(tc).net);
+  head.innerHTML = `<div><div class="eyebrow">${t("teachers")}</div><div class="muted">${teachers.length} · ${t("monthlytotal")} <b style="color:var(--teal)">${vnd(total)}</b></div></div>`;
+  const cog = el("button",{class:"iconbtn",title:t("setup")}, icon.cog);
+  cog.onclick = ()=>{ view.screen="setup"; render(); };
+  head.appendChild(cog);
+  card.appendChild(head);
+
+  teachers.forEach(tc=>{
+    const r = calc(tc);
+    const row = el("div",{class:"trow"});
+    const init = tc.name.trim().split(/\s+/).slice(-2).map(w=>w[0]).join("").toUpperCase();
+    const expat = !tc.toggles.ui;
+    const badge = tc.type==="non" ? `<span class="pill pill-gold">20%</span>` : (expat?`<span class="pill pill-teal">expat</span>`:"");
+    const rateTxt = tc.cur==="usd" ? `$${tc.rate}/h` : vnd(tc.rate)+"/h";
+    row.innerHTML = `<div class="tav">${init}</div>
+      <div style="flex:1;min-width:0;"><div style="font-weight:600;font-size:14px;">${tc.name} ${badge}</div>
+      <div class="muted">${tc.empId||""} · ${rateTxt}</div></div>
+      <div style="font-weight:700;color:var(--teal);font-variant-numeric:tabular-nums;">${vnd(r.net)}</div>
+      <div style="color:var(--ink-soft);width:18px;">${icon.chevron}</div>`;
+    row.onclick = ()=>{ view.screen="detail"; view.teacherId=tc.id; render(); };
+    card.appendChild(row);
+  });
+  frag.appendChild(card);
+
+  const addBtn = el("button",{class:"btn btn-primary",style:"margin-top:16px;"}, icon.plus+t("addteacher"));
+  addBtn.onclick = ()=>{
+    const nt = { id:nextId++, name:lang==="vi"?"Giáo viên mới":"New teacher", empId:"", type:"res", cur:"vnd",
+      rate:300000, fx:25000, deps:0, mst:"", insBase:0, allowance:0, allowanceName:"",
+      otherIncome:[], overtime:[],
+      sched:[{l:lang==="vi"?"Lớp 1":"Class 1",s:60,late:0,mult:1}],
+      toggles:{si:true,hi:true,ui:true,split:true,cap:true} };
+    teachers.push(nt); view.screen="detail"; view.teacherId=nt.id; render();
+  };
+  frag.appendChild(addBtn);
+
+  const disc = el("div",{class:"disclaimer"}); disc.innerHTML = t("disclaimer");
+  frag.appendChild(disc);
+  return frag;
+}
+
+/* ---------- center setup ---------- */
+function setupScreen(){
+  const frag = document.createDocumentFragment();
+  const back = el("button",{class:"back"}, icon.back+t("teachers"));
+  back.onclick = ()=>{ view.screen="roster"; render(); };
+  frag.appendChild(back);
+
+  const card = el("div",{class:"card card-pad"});
+  card.innerHTML = `<div class="eyebrow">${t("centersetup")}</div><div class="muted" style="margin-bottom:16px;">${t("setupintro")}</div>`;
+  const grid = el("div",{class:"grid"});
+
+  const f1 = field(t("centername"), `<input id="su-name" value="${esc(center.name)}">`);
+  const f2 = field(t("centeraddr"), `<input id="su-addr" value="${esc(center.addr)}">`);
+  const f3 = field(t("centertax"), `<input id="su-tax" value="${esc(center.tax)}">`);
+  grid.appendChild(f1); grid.appendChild(f2); grid.appendChild(f3);
+
+  const logoWrap = el("div",{});
+  logoWrap.innerHTML = `<label class="fl">Logo</label>`;
+  const logoRow = el("div",{style:"display:flex;align-items:center;gap:12px;"});
+  const prev = el("div",{class:"brandlogo",style:"width:48px;height:48px;"});
+  if(center.logo) prev.innerHTML=`<img src="${center.logo}">`; else prev.textContent="—";
+  const fileIn = el("input",{type:"file",accept:"image/*",style:"display:none;",id:"su-logo"});
+  const upBtn = el("button",{class:"btn btn-ghost"}, center.logo?t("logoset"):t("setlogo"));
+  upBtn.onclick = ()=> fileIn.click();
+  fileIn.onchange = e=>{
+    const f=e.target.files[0]; if(!f) return;
+    const rd=new FileReader(); rd.onload=()=>{ center.logo=rd.result; render(); view.screen="setup"; }; rd.readAsDataURL(f);
+  };
+  logoRow.appendChild(prev); logoRow.appendChild(upBtn); logoRow.appendChild(fileIn);
+  logoWrap.appendChild(logoRow);
+  grid.appendChild(logoWrap);
+  card.appendChild(grid);
+
+  const save = el("button",{class:"btn btn-primary",style:"margin-top:18px;"}, t("savesetup"));
+  save.onclick = ()=>{
+    center.name = document.getElementById("su-name").value;
+    center.addr = document.getElementById("su-addr").value;
+    center.tax  = document.getElementById("su-tax").value;
+    view.screen="roster"; render();
+  };
+  card.appendChild(save);
+  frag.appendChild(card);
+  return frag;
+}
+
+function field(label, inner){
+  const d = el("div",{}); d.innerHTML = `<label class="fl">${label}</label>${inner}`; return d;
+}
+function esc(s){ return (s||"").replace(/"/g,"&quot;"); }
+
+/* ---------- teacher detail ---------- */
+function detailScreen(){
+  const tch = teachers.find(x=>x.id===view.teacherId);
+  const frag = document.createDocumentFragment();
+  const back = el("button",{class:"back"}, icon.back+t("back"));
+  back.onclick = ()=>{ view.screen="roster"; render(); };
+  frag.appendChild(back);
+
+  // profile card
+  const card = el("div",{class:"card card-pad"});
+  const grid = el("div",{class:"grid cols2"});
+  grid.appendChild(field(t("name"), `<input id="d-name" value="${esc(tch.name)}">`));
+  grid.appendChild(field(t("employeeid"), `<input id="d-empid" value="${esc(tch.empId)}">`));
+  grid.appendChild(field(t("taxstatus"),
+    `<select id="d-type"><option value="res" ${tch.type==="res"?"selected":""}>${t("resident")}</option><option value="non" ${tch.type==="non"?"selected":""}>${t("nonresident")}</option></select>`));
+  grid.appendChild(field(t("paidin"),
+    `<select id="d-cur"><option value="vnd" ${tch.cur==="vnd"?"selected":""}>${t("vnddirect")}</option><option value="usd" ${tch.cur==="usd"?"selected":""}>${t("usdrate")}</option></select>`));
+  grid.appendChild(field(tch.cur==="usd"?t("usdhour"):t("ratehour"), `<input id="d-rate" type="number" value="${tch.rate}">`));
+  const fxField = field(t("exchange"), `<input id="d-fx" type="number" value="${tch.fx}">`);
+  if(tch.cur!=="usd") fxField.classList.add("hidden");
+  fxField.id="d-fxwrap";
+  grid.appendChild(fxField);
+  grid.appendChild(field(t("dependents"), `<input id="d-deps" type="number" min="0" value="${tch.deps}">`));
+  grid.appendChild(field(t("taxnumber"), `<input id="d-mst" placeholder="${t("taxnumberph")}" value="${esc(tch.mst)}">`));
+  grid.appendChild(field(t("allowancename"), `<input id="d-allowname" placeholder="${t("allowancenameph")}" value="${esc(tch.allowanceName||"")}">`));
+  grid.appendChild(field(t("allowance"), `<input id="d-allow" type="number" value="${tch.allowance||0}">`));
+  const insField = field(t("insbase"), `<input id="d-insbase" type="number" value="${tch.insBase||0}">`);
+  insField.querySelector("input").insertAdjacentHTML("afterend",`<div class="hint">${t("insbasehint")}</div>`);
+  grid.appendChild(insField);
+  card.appendChild(grid);
+  frag.appendChild(card);
+
+  // OTHER INCOME — its own separate card
+  const oiTitle = el("div",{class:"section-title"}, `${t("otherincome")} <span class="muted">— ${t("otherhint")}</span>`);
+  frag.appendChild(oiTitle);
+  const oiCard = el("div",{class:"card card-pad"});
+  const oiRows = el("div",{id:"oi-rows"});
+  oiCard.appendChild(oiRows);
+  renderOtherIncome(oiRows, tch);
+  const addOi = el("button",{class:"add-link"}, icon.plus+t("addincome"));
+  addOi.onclick = ()=>{ readDetail(tch); (tch.otherIncome=tch.otherIncome||[]).push({name:"",rate:0,hours:0}); renderOtherIncome(oiRows, tch); };
+  oiCard.appendChild(addOi);
+  frag.appendChild(oiCard);
+
+  // OVERTIME — its own separate card
+  const otTitle = el("div",{class:"section-title"}, `${t("overtime")} <span class="muted">— ${t("overtimehint")}</span>`);
+  frag.appendChild(otTitle);
+  const otCard = el("div",{class:"card card-pad"});
+  const otRows = el("div",{id:"ot-rows"});
+  otCard.appendChild(otRows);
+  renderOvertime(otRows, tch);
+  const addOt = el("button",{class:"add-link"}, icon.plus+t("addovertime"));
+  addOt.onclick = ()=>{ readDetail(tch); (tch.overtime=tch.overtime||[]).push({name:"",rate:0,hours:0}); renderOvertime(otRows, tch); };
+  otCard.appendChild(addOt);
+  frag.appendChild(otCard);
+
+  // weekly schedule builder
+  const st = el("div",{class:"section-title"}, `${t("weeklysched")} <span class="muted">— ${t("weeklyhint")}</span>`);
+  frag.appendChild(st);
+  const schedCard = el("div",{class:"card card-pad",style:"overflow-x:auto;"});
+  const rowsWrap = el("div",{id:"weekly-rows"});
+  schedCard.appendChild(rowsWrap);
+  renderWeeklyRows(rowsWrap, tch);
+  frag.appendChild(schedCard);
+
+  // calendar
+  const ct = el("div",{class:"section-title"}, `${t("calendar")}`);
+  frag.appendChild(ct);
+  const calCard = el("div",{class:"card card-pad",id:"calwrap"});
+  renderCalendar(calCard, tch);
+  frag.appendChild(calCard);
+
+  // options
+  const opts = el("div",{class:"grid cols2",style:"margin-top:18px;"});
+  const cc = el("div",{class:"card card-pad"});
+  cc.innerHTML = `<div style="font-size:13px;font-weight:600;margin-bottom:4px;">${t("contributions")} <span class="muted" style="font-weight:400;">(${t("showapply")})</span></div>`;
+  cc.appendChild(toggle("si", t("si"), tch.toggles.si, tch));
+  cc.appendChild(toggle("hi", t("hi"), tch.toggles.hi, tch));
+  cc.appendChild(toggle("ui", t("ui"), tch.toggles.ui, tch));
+  cc.insertAdjacentHTML("beforeend", `<div class="hint">${t("uihint")}</div>`);
+  opts.appendChild(cc);
+
+  const hc = el("div",{class:"card card-pad"});
+  hc.innerHTML = `<div style="font-size:13px;font-weight:600;margin-bottom:4px;">${t("holidaydisplay")}</div>`;
+  hc.appendChild(toggle("split", t("breakpremium"), tch.toggles.split, tch));
+  hc.insertAdjacentHTML("beforeend", `<div class="hint">${t("premiumhint")}</div>`);
+  hc.appendChild(toggle("cap", t("applycaps"), tch.toggles.cap, tch));
+  hc.insertAdjacentHTML("beforeend", `<div class="hint">${t("capshint")}</div>`);
+  opts.appendChild(hc);
+  frag.appendChild(opts);
+
+  // breakdown
+  const bd = el("div",{class:"card card-pad",style:"margin-top:18px;",id:"breakdown"});
+  frag.appendChild(bd);
+  renderBreakdown(bd, tch);
+
+  // actions
+  const actions = el("div",{class:"btn-row"});
+  const slipBtn = el("button",{class:"btn btn-primary"}, icon.doc+t("viewpayslip"));
+  slipBtn.onclick = ()=>{ readDetail(tch); view.screen="payslip"; render(); };
+  actions.appendChild(slipBtn);
+  frag.appendChild(actions);
+
+  // wire live inputs
+  setTimeout(()=>{
+    ["d-name","d-empid","d-type","d-cur","d-rate","d-fx","d-deps","d-mst","d-allow","d-allowname","d-insbase"].forEach(id=>{
+      const e=document.getElementById(id); if(!e) return;
+      e.addEventListener("input", ()=>{ readDetail(tch);
+        if(id==="d-cur"){ render(); }
+        else { renderBreakdown(document.getElementById("breakdown"), tch); refreshTopRate(tch); }
+      });
+      e.addEventListener("change", ()=>{ readDetail(tch); render(); });
+    });
+  },0);
+
+  return frag;
+}
+
+function refreshTopRate(){ /* placeholder for any header rate echo */ }
+
+function toggle(key, label, val, tch){
+  const row = el("label",{class:"toggle-row"});
+  const cb = el("input",{type:"checkbox"}); cb.checked=val;
+  cb.onchange = ()=>{ tch.toggles[key]=cb.checked; renderBreakdown(document.getElementById("breakdown"), tch); };
+  row.appendChild(cb); row.appendChild(el("span",{},label));
+  return row;
+}
+
+const DOWSEL = [1,2,3,4,5,6,7];
+function renderOvertime(wrap, tch){
+  wrap.innerHTML="";
+  tch.overtime = tch.overtime || [];
+  if(!tch.overtime.length) tch.overtime.push({name:"",rate:0,hours:0});
+  const list = tch.overtime;
+  const isUsd = tch.cur==="usd";
+  const rateLabel = isUsd ? (t("otrate")+" ($)") : (t("otrate")+" (VND)");
+  const head = el("div",{class:"oi-h"});
+  head.innerHTML = `<span>${t("otname")}</span><span>${rateLabel}</span><span>${t("othours")}</span><span>=</span><span></span>`;
+  wrap.appendChild(head);
+  const normalVnd = tch.cur==="usd" ? (+tch.rate||0)*(+tch.fx||0) : (+tch.rate||0);
+  list.forEach((o,j)=>{
+    const otRateVnd = isUsd ? (+o.rate||0)*(+tch.fx||0) : (+o.rate||0);
+    const hrs=+o.hours||0;
+    const total = otRateVnd*hrs;
+    const row = el("div",{class:"oi-r"});
+    row.innerHTML = `<input value="${esc(o.name||"")}" placeholder="${t("otnameph")}" data-otf="name" data-j="${j}">
+      <input type="number" value="${o.rate||0}" data-otf="rate" data-j="${j}">
+      <input type="number" value="${o.hours||0}" data-otf="hours" data-j="${j}">
+      <span class="oi-amt" data-otamt="${j}">${vnd(total)}</span>
+      <button class="iconbtn" data-otdel="${j}">${icon.x}</button>`;
+    wrap.appendChild(row);
+  });
+  wrap.querySelectorAll("[data-otf]").forEach(inp=>{
+    inp.addEventListener("input", ()=>{
+      const j=+inp.dataset.j, f=inp.dataset.otf;
+      tch.overtime[j][f] = f==="name" ? inp.value : (+inp.value||0);
+      const otRateVnd = isUsd ? (+tch.overtime[j].rate||0)*(+tch.fx||0) : (+tch.overtime[j].rate||0);
+      const amtEl=wrap.querySelector(`[data-otamt="${j}"]`);
+      if(amtEl) amtEl.textContent = vnd(otRateVnd*(+tch.overtime[j].hours||0));
+      renderBreakdown(document.getElementById("breakdown"), tch);
+    });
+  });
+  wrap.querySelectorAll("button[data-otdel]").forEach(b=>{
+    b.addEventListener("click", ()=>{ tch.overtime.splice(+b.dataset.otdel,1);
+      renderOvertime(wrap,tch); renderBreakdown(document.getElementById("breakdown"),tch); });
+  });
+}
+function renderOtherIncome(wrap, tch){
+  wrap.innerHTML="";
+  tch.otherIncome = tch.otherIncome || [];
+  // always show at least one row to fill in
+  if(!tch.otherIncome.length) tch.otherIncome.push({name:"",rate:0,hours:0});
+  const list = tch.otherIncome;
+  const head = el("div",{class:"oi-h"});
+  head.innerHTML = `<span>${t("incomename")}</span><span>${t("amountvnd")}</span><span>${t("hourslabel")}</span><span>=</span><span></span>`;
+  wrap.appendChild(head);
+  list.forEach((o,j)=>{
+    const amt = (+o.rate||0)*(+o.hours||0);
+    const row = el("div",{class:"oi-r"});
+    row.innerHTML = `<input value="${esc(o.name||"")}" placeholder="${t("incomenameph")}" data-oif="name" data-j="${j}">
+      <input type="number" value="${o.rate||0}" data-oif="rate" data-j="${j}">
+      <input type="number" value="${o.hours||0}" data-oif="hours" data-j="${j}">
+      <span class="oi-amt" data-amt="${j}">${vnd(amt)}</span>
+      <button class="iconbtn" data-oidel="${j}">${icon.x}</button>`;
+    wrap.appendChild(row);
+  });
+  wrap.querySelectorAll("[data-oif]").forEach(inp=>{
+    inp.addEventListener("input", ()=>{
+      const j=+inp.dataset.j, f=inp.dataset.oif;
+      tch.otherIncome[j][f] = f==="name" ? inp.value : (+inp.value||0);
+      const amtEl = wrap.querySelector(`[data-amt="${j}"]`);
+      if(amtEl) amtEl.textContent = vnd((+tch.otherIncome[j].rate||0)*(+tch.otherIncome[j].hours||0));
+      renderBreakdown(document.getElementById("breakdown"), tch);
+    });
+  });
+  wrap.querySelectorAll("button[data-oidel]").forEach(b=>{
+    b.addEventListener("click", ()=>{ tch.otherIncome.splice(+b.dataset.oidel,1);
+      renderOtherIncome(wrap,tch); renderBreakdown(document.getElementById("breakdown"),tch); });
+  });
+}
+
+/* ---- timetable grid: explicit time rows × Mon..Sun ---- */
+function ensureTimeRows(tch){
+  // migrate: if no timeRows yet, derive from existing weekly slots
+  if(!tch.timeRows){
+    const map = {};
+    (tch.weekly||[]).forEach(s=>{
+      const k = s.start+"-"+s.end;
+      if(!map[k]){ map[k] = {id:"r"+Object.keys(map).length, start:s.start, end:s.end}; }
+      s.rowId = map[k].id;
+    });
+    tch.timeRows = Object.values(map).sort((a,b)=> a.start.localeCompare(b.start));
+    if(!tch.timeRows.length) tch.timeRows = [{id:"r0",start:"18:00",end:"19:30"}];
+  }
+  return tch.timeRows;
+}
+function renderWeeklyRows(wrap, tch){
+  wrap.innerHTML="";
+  tch.weekly = tch.weekly || [];
+  const rows = ensureTimeRows(tch);
+  const days = DOW_LABELS[lang];
+
+  const grid = el("div",{class:"tt"});
+  let html = `<div class="tt-th tt-time">${t("starttime")}/${t("endtime")}</div>`;
+  days.forEach(d=> html += `<div class="tt-th">${d}</div>`);
+  grid.innerHTML = html;
+
+  rows.forEach((r)=>{
+    const timeCell = el("div",{class:"tt-time-cell"});
+    timeCell.innerHTML = `<input type="time" value="${r.start}" data-rowid="${r.id}" data-tf="start"><span class="tt-dash">–</span><input type="time" value="${r.end}" data-rowid="${r.id}" data-tf="end"><button class="tt-delrow iconbtn" data-delrow="${r.id}" title="remove row">${icon.x}</button>`;
+    grid.appendChild(timeCell);
+    DOWSEL.forEach(dow=>{
+      const slot = tch.weekly.find(s=> s.rowId===r.id && s.dow===dow);
+      const cell = el("div",{class:"tt-cell"+(slot?" filled":"")});
+      cell.innerHTML = `<input value="${slot?esc(slot.label):""}" placeholder="–" data-rowid="${r.id}" data-dow="${dow}">`;
+      grid.appendChild(cell);
+    });
+  });
+  wrap.appendChild(grid);
+
+  const addRow = el("button",{class:"add-link",style:"margin-top:10px;"}, icon.plus+t("addslot"));
+  addRow.onclick = ()=>{
+    const last = rows[rows.length-1];
+    tch.timeRows.push({id:"r"+Date.now(), start:last?last.end:"08:00", end:"09:00"});
+    renderWeeklyRows(wrap, tch);
+  };
+  wrap.appendChild(addRow);
+
+  // edit a row's time
+  wrap.querySelectorAll("input[data-tf]").forEach(inp=>{
+    inp.addEventListener("change", ()=>{
+      const rid=inp.dataset.rowid, f=inp.dataset.tf;
+      const row = tch.timeRows.find(r=>r.id===rid); if(row) row[f]=inp.value;
+      renderBreakdown(document.getElementById("breakdown"), tch);
+      renderCalendar(document.getElementById("calwrap"), tch);
+    });
+  });
+  // delete a row
+  wrap.querySelectorAll("button[data-delrow]").forEach(b=>{
+    b.addEventListener("click", ()=>{
+      const rid=b.dataset.delrow;
+      tch.timeRows = tch.timeRows.filter(r=>r.id!==rid);
+      tch.weekly = tch.weekly.filter(s=> s.rowId!==rid);
+      if(!tch.timeRows.length) tch.timeRows=[{id:"r0",start:"18:00",end:"19:30"}];
+      renderWeeklyRows(wrap, tch);
+      renderBreakdown(document.getElementById("breakdown"), tch);
+      renderCalendar(document.getElementById("calwrap"), tch);
+    });
+  });
+  // edit a class cell
+  wrap.querySelectorAll("input[data-dow]").forEach(inp=>{
+    inp.addEventListener("change", ()=>{
+      const rid=inp.dataset.rowid, dow=+inp.dataset.dow, val=inp.value.trim();
+      const row = tch.timeRows.find(r=>r.id===rid);
+      let slot = tch.weekly.find(s=> s.rowId===rid && s.dow===dow);
+      if(val){
+        if(slot) slot.label=val;
+        else tch.weekly.push({id:"s"+Date.now()+dow, label:val, dow, rowId:rid, start:row.start, end:row.end, mult:1});
+      } else if(slot){
+        tch.weekly = tch.weekly.filter(s=> s!==slot);
+      }
+      renderWeeklyRows(wrap, tch);
+      renderBreakdown(document.getElementById("breakdown"), tch);
+      renderCalendar(document.getElementById("calwrap"), tch);
+    });
+  });
+}
+
+function renderCalendar(wrap, tch){
+  wrap.innerHTML="";
+  const {year,month}=calState;
+  // header with nav
+  const nav = el("div",{class:"cal-nav"});
+  const prev = el("button",{class:"iconbtn"}, icon.back);
+  const next = el("button",{class:"iconbtn"}, icon.chevron);
+  prev.onclick=()=>{ calState.month--; if(calState.month<0){calState.month=11;calState.year--;} render(); };
+  next.onclick=()=>{ calState.month++; if(calState.month>11){calState.month=0;calState.year++;} render(); };
+  const occ = monthOccurrences(tch, year, month);
+  const totalSched = occ.reduce((a,o)=>a+o.sched,0);
+  const totalWorked = occ.reduce((a,o)=>a+o.worked,0);
+  nav.appendChild(prev);
+  nav.appendChild(el("div",{style:"flex:1;text-align:center;"},`<div style="font-weight:600;">${MONTH_LABELS[lang][month]} ${year}</div><div class="muted">${t("workedmin")} ${Math.round(totalWorked/60*10)/10}h / ${Math.round(totalSched/60*10)/10}h</div>`));
+  nav.appendChild(next);
+  wrap.appendChild(nav);
+
+  // weekday header
+  const grid = el("div",{class:"cal-grid"});
+  DOW_LABELS[lang].forEach(d=> grid.appendChild(el("div",{class:"cal-dow"},d)));
+  // leading blanks
+  let firstDow = new Date(year,month,1).getDay(); firstDow=firstDow===0?7:firstDow;
+  for(let i=1;i<firstDow;i++) grid.appendChild(el("div",{class:"cal-cell empty"}));
+  const days=new Date(year,month+1,0).getDate();
+  for(let d=1; d<=days; d++){
+    const dayOcc = occ.filter(o=>o.date===d);
+    const cell = el("div",{class:"cal-cell"+(dayOcc.length?" has":"")});
+    let dots="";
+    dayOcc.forEach(o=>{ dots += `<span class="cal-dot${o.ded?" late":""}" title="${esc(o.slot.label)}"></span>`; });
+    cell.innerHTML = `<span class="cal-num">${d}</span><div class="cal-dots">${dots}</div>`;
+    if(dayOcc.length){ cell.onclick=()=>openDay(tch, year, month, d); }
+    grid.appendChild(cell);
+  }
+  wrap.appendChild(grid);
+
+  // legend
+  wrap.appendChild(el("div",{class:"muted",style:"margin-top:10px;display:flex;gap:16px;align-items:center;"},
+    `<span style="display:inline-flex;align-items:center;gap:6px;"><span class="cal-dot"></span> ${t("class")}</span><span style="display:inline-flex;align-items:center;gap:6px;"><span class="cal-dot late"></span> ${t("deducted")}</span>`));
+}
+
+function openDay(tch, year, month, d){
+  const occ = monthOccurrences(tch, year, month).filter(o=>o.date===d);
+  const modal = el("div",{class:"modal-bg"});
+  const box = el("div",{class:"modal"});
+  const dateStr = `${DOW_LABELS[lang][(new Date(year,month,d).getDay()||7)-1]} ${d} ${MONTH_LABELS[lang][month]}`;
+  box.innerHTML = `<div class="modal-head"><span style="font-weight:600;">${dateStr}</span></div>`;
+  occ.forEach(o=>{
+    const ded = o.ded || {mins:0,note:""};
+    const item = el("div",{class:"day-item"});
+    item.innerHTML = `<div style="font-weight:600;font-size:14px;">${esc(o.slot.label)}</div>
+      <div class="muted" style="margin-bottom:8px;">${o.slot.start}–${o.slot.end} · ${o.sched} ${lang==="vi"?"phút":"min"}</div>`;
+    const row = el("div",{class:"grid cols2",style:"gap:10px;"});
+    row.appendChild(field(t("deductmins"), `<input type="number" min="0" value="${ded.mins}" id="ded-${o.slot.id}">`));
+    row.appendChild(field(t("reasonopt"), `<input value="${esc(ded.note)}" id="note-${o.slot.id}" placeholder="${t("reasonopt")}">`));
+    item.appendChild(row);
+    box.appendChild(item);
+  });
+  const actions = el("div",{class:"btn-row",style:"margin-top:8px;"});
+  const save = el("button",{class:"btn btn-primary"}, t("save"));
+  save.onclick = ()=>{
+    occ.forEach(o=>{
+      const mins=+document.getElementById("ded-"+o.slot.id).value||0;
+      const note=document.getElementById("note-"+o.slot.id).value;
+      tch.deductions = tch.deductions||{};
+      if(mins>0){ tch.deductions[o.key]={mins,note}; }
+      else { delete tch.deductions[o.key]; }
+    });
+    document.body.removeChild(modal);
+    renderBreakdown(document.getElementById("breakdown"), tch);
+    renderCalendar(document.getElementById("calwrap"), tch);
+  };
+  const cancel = el("button",{class:"btn btn-ghost"}, lang==="vi"?"Đóng":"Close");
+  cancel.onclick=()=> document.body.removeChild(modal);
+  actions.appendChild(save); actions.appendChild(cancel);
+  box.appendChild(actions);
+  modal.appendChild(box);
+  modal.onclick=(e)=>{ if(e.target===modal) document.body.removeChild(modal); };
+  document.body.appendChild(modal);
+}
+
+
+function readDetail(tch){
+  const g=id=>document.getElementById(id);
+  if(!g("d-name")) return;
+  tch.name=g("d-name").value; tch.empId=g("d-empid").value;
+  tch.type=g("d-type").value; tch.cur=g("d-cur").value;
+  tch.rate=+g("d-rate").value||0; if(g("d-fx")) tch.fx=+g("d-fx").value||0;
+  tch.deps=Math.max(0,+g("d-deps").value||0); tch.mst=g("d-mst").value;
+  tch.allowance=+g("d-allow").value||0; tch.insBase=+g("d-insbase").value||0;
+  if(g("d-allowname")) tch.allowanceName=g("d-allowname").value;
+}
+
+function renderBreakdown(box, tch){
+  const r = calc(tch);
+  const rows = [];
+  rows.push(["lab", t("hourlyrate"), vnd(r.vndRate)]);
+  rows.push(["lab", t("regularpay"), vnd(r.regPay)]);
+  if(r.allowance>0) rows.push(["lab", (tch.allowanceName||t("allowance")), vnd(r.allowance)]);
+  (tch.otherIncome||[]).forEach(o=>{ const amt=(+o.rate||0)*(+o.hours||0); if(amt>0) rows.push(["lab", o.name||t("otherincome"), vnd(amt)]); });
+  if(r.otNormal>0) rows.push(["lab", t("otnormalpart"), vnd(r.otNormal)]);
+  if(r.latePay>0) rows.push(["neg", t("latededuct"), "−"+vnd(r.latePay)]);
+  if(r.classPremium>0) rows.push(["pos", t("holidaypremium"), vnd(r.classPremium)]);
+  if(r.otPremium>0) rows.push(["pos", t("otpremiumpart"), vnd(r.otPremium)]);
+  let html = `<div class="bd-row"><span class="lab">${t("gross")}</span><span class="val">${vnd(r.gross)}</span></div>`;
+  let pre = "";
+  rows.forEach(([cls,l,v])=>{
+    pre += `<div class="bd-row ${cls==='neg'?'neg':cls==='pos'?'pos':''}"><span class="lab">${l}</span><span class="val">${v}</span></div>`;
+  });
+  let mid = "";
+  if(tch.toggles.si) mid += `<div class="bd-row neg"><span class="lab">− ${t("si")}</span><span class="val">−${vnd(r.siAmt)}</span></div>`;
+  if(tch.toggles.hi) mid += `<div class="bd-row neg"><span class="lab">− ${t("hi")}</span><span class="val">−${vnd(r.hiAmt)}</span></div>`;
+  if(tch.toggles.ui) mid += `<div class="bd-row neg"><span class="lab">− ${t("ui")}</span><span class="val">−${vnd(r.uiAmt)}</span></div>`;
+  mid += `<div class="bd-row neg"><span class="lab">− ${t("pit")}</span><span class="val">−${vnd(r.pitDue)}</span></div>`;
+  const net = `<div class="bd-total"><span class="lab">${t("net")}</span><span class="val">${vnd(r.net)}</span></div>`;
+  box.innerHTML = pre + html + mid + net;
+}
+
+/* ---------- payslip ---------- */
+function buildSlipHTML(tch, forPrint){
+  const r = calc(tch);
+  const L = I18N[lang];
+  const period = new Date().toLocaleDateString(lang==="vi"?"vi-VN":"en-GB",{month:"2-digit",year:"numeric"});
+  const init = (center.name||"C").trim()[0].toUpperCase();
+  const logo = center.logo ? `<img src="${center.logo}">` : init;
+
+  // income lines
+  let incomeLines = `<div class="slip-line"><span class="l">${L.teachingpay}<span class="en">${I18N.en.teachingpay}</span></span><span class="a">${vnd(r.regPay)}</span></div>`;
+  if(r.allowance>0) incomeLines += `<div class="slip-line"><span class="l">${esc(tch.allowanceName)||L.allowance}<span class="en">${tch.allowanceName?I18N.en.allowance:""}</span></span><span class="a">${vnd(r.allowance)}</span></div>`;
+  (tch.otherIncome||[]).forEach(o=>{ const amt=(+o.rate||0)*(+o.hours||0); if(amt>0) incomeLines += `<div class="slip-line"><span class="l">${esc(o.name)||L.otherincome}</span><span class="a">${vnd(amt)}</span></div>`; });
+  if(r.otNormal>0) incomeLines += `<div class="slip-line"><span class="l">${L.otnormalpart}</span><span class="a">${vnd(r.otNormal)}</span></div>`;
+  if(r.classPremium>0) incomeLines += `<div class="slip-line"><span class="l">${L.holidaypremium}<span class="en">${I18N.en.holidaypremium}</span></span><span class="a">${vnd(r.classPremium)}</span></div>`;
+  if(r.otPremium>0) incomeLines += `<div class="slip-line"><span class="l">${L.otpremiumpart}<span class="en" style="color:var(--teal);">${L.exemptnote}</span></span><span class="a">${vnd(r.otPremium)}</span></div>`;
+  incomeLines += `<div class="slip-line sub"><span class="l">${L.totalincome}</span><span class="a">${vnd(r.gross)}</span></div>`;
+
+  // deduction lines
+  let dedLines = "";
+  if(tch.toggles.si) dedLines += `<div class="slip-line"><span class="l">BHXH<span class="en">Social insurance</span></span><span class="a">${vnd(r.siAmt)}</span></div>`;
+  if(tch.toggles.hi) dedLines += `<div class="slip-line"><span class="l">BHYT<span class="en">Health insurance</span></span><span class="a">${vnd(r.hiAmt)}</span></div>`;
+  if(tch.toggles.ui) dedLines += `<div class="slip-line"><span class="l">BHTN<span class="en">Unemployment</span></span><span class="a">${vnd(r.uiAmt)}</span></div>`;
+  dedLines += `<div class="slip-line"><span class="l">${lang==="vi"?"Thuế TNCN":"PIT"}<span class="en">${lang==="vi"?"Personal income tax":"Thuế TNCN"}</span></span><span class="a">${vnd(r.pitDue)}</span></div>`;
+  dedLines += `<div class="slip-line sub"><span class="l">${L.totaldeduct}</span><span class="a">${vnd(r.insTotal+r.pitDue)}</span></div>`;
+
+  const mst = tch.mst ? `<div class="meta-item"><span class="k">${L.taxnumber}: </span><span class="v">${tch.mst}</span></div>` : "";
+
+  return `
+  <div class="slip">
+    <div class="slip-head">
+      <div style="display:flex;gap:14px;align-items:center;">
+        <div class="slip-logo">${logo}</div>
+        <div>
+          <div class="slip-title"><span class="vi">${L.payslip} / Payslip</span><span class="en">${center.name||""}</span></div>
+          <div class="slip-period">${L.period}: ${period}</div>
+        </div>
+      </div>
+      <div style="text-align:right;font-size:11px;color:var(--ink-soft);max-width:170px;">
+        ${center.addr?center.addr+"<br>":""}${center.tax?(L.centertax+": "+center.tax):""}
+      </div>
+    </div>
+    <div class="slip-meta">
+      <div class="meta-item"><span class="k">${L.employeeid}: </span><span class="v">${tch.empId||"—"}</span></div>
+      <div class="meta-item"><span class="k">${L.name}: </span><span class="v">${tch.name}</span></div>
+      <div class="meta-item"><span class="k">${L.position}: </span><span class="v">${L.position_val}</span></div>
+      ${mst}
+      <div class="meta-item"><span class="k">${L.insbaseLabel}: </span><span class="v">${vnd(r.insSalary)}</span></div>
+      <div class="meta-item"><span class="k">${L.deduction}: </span><span class="v">${vnd(r.familyDeduction)}</span></div>
+      <div class="meta-item"><span class="k">${L.taxableincome}: </span><span class="v">${vnd(r.taxableIncome)}</span></div>
+    </div>
+    <div class="slip-cols">
+      <div><div class="slip-colhead">${L.income} / Income</div>${incomeLines}</div>
+      <div><div class="slip-colhead">${L.deductions} / Deductions</div>${dedLines}</div>
+    </div>
+    <div class="slip-net">
+      <span class="l">${L.net}<span class="en">${I18N.en.net} / Thực lĩnh</span></span>
+      <span class="a">${vnd(r.net)}</span>
+    </div>
+    <div class="slip-sign">
+      <div class="sign-box"><div class="line"><span class="role">${L.preparer}</span><br><span class="sub">${L.signdate}</span></div></div>
+      <div class="sign-box"><div class="line"><span class="role">${L.receiver}</span><br><span class="sub">${L.signdate}</span></div></div>
+    </div>
+    <div class="slip-foot">${L.slipfoot}</div>
+  </div>`;
+}
+
+function payslipScreen(){
+  const tch = teachers.find(x=>x.id===view.teacherId);
+  const frag = document.createDocumentFragment();
+  const back = el("button",{class:"back"}, icon.back+t("back"));
+  back.onclick = ()=>{ view.screen="detail"; render(); };
+  frag.appendChild(back);
+
+  const holder = el("div",{});
+  holder.innerHTML = buildSlipHTML(tch,false);
+  frag.appendChild(holder);
+
+  const actions = el("div",{class:"btn-row"});
+  const pdf = el("button",{class:"btn btn-primary"}, icon.file+t("exportpdf"));
+  pdf.onclick = ()=> exportPDF(tch);
+  const xls = el("button",{class:"btn btn-ghost"}, icon.sheet+t("exportexcel"));
+  xls.onclick = ()=> exportCSV(tch);
+  actions.appendChild(pdf); actions.appendChild(xls);
+  frag.appendChild(actions);
+  return frag;
+}
+
+/* ---------- exports ---------- */
+function exportPDF(tch){
+  const css = document.querySelector("style").innerHTML;
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${t("payslip")} · ${tch.name}</title>
+    <style>${css} body{background:#fff;padding:24px;} .slip{box-shadow:none;max-width:720px;margin:0 auto;}</style></head>
+    <body>${buildSlipHTML(tch,true)}</body></html>`;
+  const w = window.open("","_blank");
+  if(w){ w.document.write(html); w.document.close(); setTimeout(()=>w.print(),350); }
+}
+function exportCSV(tch){
+  const r = calc(tch); const L=I18N[lang];
+  const rows = [
+    [L.payslip, tch.name],
+    [L.employeeid, tch.empId||""],
+    [L.taxnumber, tch.mst||""],
+    [L.period, new Date().toLocaleDateString("en-GB",{month:"2-digit",year:"numeric"})],
+    [],
+    [L.teachingpay, Math.round(r.regPay)],
+    [L.allowance, Math.round(r.allowance)],
+    [L.holidaypremium, Math.round(r.premium)],
+    [L.totalincome, Math.round(r.gross)],
+    ["BHXH (SI 8%)", Math.round(r.siAmt)],
+    ["BHYT (HI 1.5%)", Math.round(r.hiAmt)],
+    ["BHTN (UI 1%)", Math.round(r.uiAmt)],
+    [L.pit, Math.round(r.pitDue)],
+    [L.insbaseLabel, Math.round(r.insSalary)],
+    [L.taxableincome, Math.round(r.taxableIncome)],
+    [L.net, Math.round(r.net)],
+  ];
+  const csv = "\uFEFF" + rows.map(row=> row.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
+  const blob = new Blob([csv],{type:"text/csv;charset=utf-8;"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download=`payslip_${(tch.name||"teacher").replace(/\s+/g,"_")}.csv`; a.click();
+}
+
+/* ===== LICENSE GATE + ENCRYPTED LOCAL STORAGE ===== */
+/* Keys are issued by you. Format: BASE64(payload).SIGNATURE
+   payload = {c:centreName, e:expiryYYYYMMDD or ""}  signed with SECRET via SHA-256.
+   This is a practical gate for non-technical users, not bank-grade DRM. */
+const LICENSE_SECRET = "TP-t3Clm8FbWmkohZ9KOOuu7oUDDJPl"; // change this; must match keygen
+const RENEWAL_EMAIL = "you@youremail.com"; // where "I want to renew" requests are sent — change to your email
+const LS_KEY = "tp_license_v1";
+const LS_DATA = "tp_data_v1";
+
+async function sha256hex(str){
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+function b64e(s){ return btoa(unescape(encodeURIComponent(s))); }
+function b64d(s){ try{ return decodeURIComponent(escape(atob(s))); }catch(e){ return null; } }
+
+async function verifyKey(key){
+  if(!key || key.indexOf(".")<0) return {ok:false};
+  const [payloadB64, sig] = key.trim().split(".");
+  const payloadStr = b64d(payloadB64);
+  if(!payloadStr) return {ok:false};
+  const expectSig = (await sha256hex(payloadStr + LICENSE_SECRET)).slice(0,16);
+  if(sig !== expectSig) return {ok:false};
+  let data; try{ data = JSON.parse(payloadStr); }catch(e){ return {ok:false}; }
+  // expiry check
+  let daysLeft = null;
+  if(data.e){
+    const today = new Date(); today.setHours(0,0,0,0);
+    const ey=parseInt(data.e.slice(0,4)), em=parseInt(data.e.slice(4,6))-1, ed=parseInt(data.e.slice(6,8));
+    const expDate = new Date(ey,em,ed); expDate.setHours(0,0,0,0);
+    daysLeft = Math.round((expDate - today)/86400000);
+    if(daysLeft < 0) return {ok:false, expired:true, centre:data.c, exp:data.e};
+  }
+  return {ok:true, centre:data.c||"", exp:data.e||"", daysLeft};
+}
+
+/* ---- encrypted local storage (AES-GCM) ----
+   The encryption key is derived from the centre's EMAIL (constant across renewals),
+   NOT the licence key — so a renewed key still decrypts existing data. */
+let CRYPTO_KEY = null;
+async function deriveKey(emailOrId){
+  const base = await crypto.subtle.importKey("raw", new TextEncoder().encode((emailOrId||"").toLowerCase()+LICENSE_SECRET), "PBKDF2", false, ["deriveKey"]);
+  return crypto.subtle.deriveKey(
+    {name:"PBKDF2", salt:new TextEncoder().encode("tp-salt-v1"), iterations:100000, hash:"SHA-256"},
+    base, {name:"AES-GCM", length:256}, false, ["encrypt","decrypt"]);
+}
+async function encryptData(obj){
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const enc = await crypto.subtle.encrypt({name:"AES-GCM", iv}, CRYPTO_KEY, new TextEncoder().encode(JSON.stringify(obj)));
+  const out = { iv:Array.from(iv), data:Array.from(new Uint8Array(enc)) };
+  return JSON.stringify(out);
+}
+async function decryptData(str){
+  try{
+    const {iv, data} = JSON.parse(str);
+    const dec = await crypto.subtle.decrypt({name:"AES-GCM", iv:new Uint8Array(iv)}, CRYPTO_KEY, new Uint8Array(data));
+    return JSON.parse(new TextDecoder().decode(dec));
+  }catch(e){ return null; }
+}
+async function saveData(){
+  if(!CRYPTO_KEY) return;
+  try{
+    const payload = { center, teachers, nextId };
+    localStorage.setItem(LS_DATA, await encryptData(payload));
+  }catch(e){ console.warn("save failed", e); }
+}
+async function loadData(){
+  const raw = localStorage.getItem(LS_DATA);
+  if(!raw) return false;
+  const obj = await decryptData(raw);
+  if(obj && obj.teachers){ center = obj.center||center; teachers = obj.teachers; nextId = obj.nextId||teachers.length+1; return true; }
+  return false;
+}
+/* autosave: wrap render so every change persists */
+let _saveTimer=null;
+function scheduleSave(){ clearTimeout(_saveTimer); _saveTimer=setTimeout(saveData, 400); }
+const _origRender = render;
+render = function(){ _origRender(); scheduleSave(); };
+
+/* ---- gate UI ---- */
+function showGate(msg){
+  CRYPTO_KEY = null;
+  const app = document.getElementById("app");
+  app.innerHTML = `
+    <div style="max-width:420px;margin:8vh auto;padding:0 16px;">
+      <div style="display:flex;align-items:center;gap:11px;justify-content:center;margin-bottom:26px;">
+        <div style="width:42px;height:42px;border-radius:11px;background:var(--teal);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;">L</div>
+        <div><div style="font-weight:700;font-size:16px;">Lương Giáo Viên</div><div style="font-size:12px;color:var(--ink-soft);">Teacher Payroll</div></div>
+      </div>
+      <div class="card card-pad">
+        <div style="font-size:18px;font-weight:600;margin-bottom:5px;">Mở khoá ứng dụng / Unlock</div>
+        <div class="muted" style="margin-bottom:18px;">Nhập email và mã giấy phép trung tâm. / Enter your email and centre licence key.</div>
+        ${msg?`<div style="background:var(--rose-soft);color:var(--rose);font-size:13px;padding:10px 12px;border-radius:9px;margin-bottom:14px;">${msg}</div>`:""}
+        <label class="fl">Email</label>
+        <input id="gate-email" type="email" placeholder="ten@trungtam.vn" style="margin-bottom:14px;">
+        <label class="fl">Mã giấy phép / Licence key</label>
+        <input id="gate-key" placeholder="xxxxx.xxxxx" style="margin-bottom:18px;">
+        <button class="btn btn-primary" id="gate-btn" style="width:100%;justify-content:center;">Mở khoá / Unlock</button>
+        <div class="hint" style="margin-top:14px;">Dữ liệu được lưu mã hoá trên thiết bị này. Chúng tôi không lưu dữ liệu của bạn. / Your data is encrypted on this device. We never store it.</div>
+      </div>
+    </div>`;
+  document.getElementById("gate-btn").onclick = async ()=>{
+    const email = document.getElementById("gate-email").value.trim();
+    const key = document.getElementById("gate-key").value.trim();
+    if(!email){ showGate("Vui lòng nhập email. / Please enter your email."); return; }
+    const res = await verifyKey(key);
+    if(res.expired){ showGate("Mã đã hết hạn. Vui lòng gia hạn. / Licence expired. Please renew."); return; }
+    if(!res.ok){ showGate("Mã không hợp lệ. / Invalid licence key."); return; }
+    localStorage.setItem(LS_KEY, JSON.stringify({key, email}));
+    CRYPTO_KEY = await deriveKey(email);
+    await loadData();
+    view = { screen:"roster", teacherId:null };
+    render();
+    maybeWarn(res.daysLeft);
+  };
+}
+
+/* ---- renewal warning banner (3 days before expiry) ---- */
+function maybeWarn(daysLeft){
+  const old = document.getElementById("renew-banner"); if(old) old.remove();
+  if(daysLeft===null || daysLeft===undefined || daysLeft>3) return;
+  const vi = daysLeft===0 ? "Giấy phép của bạn hết hạn hôm nay. Vui lòng gia hạn để tiếp tục."
+            : `Giấy phép của bạn sẽ hết hạn sau ${daysLeft} ngày. Vui lòng gia hạn.`;
+  const en = daysLeft===0 ? "Your licence expires today. Please renew to keep access."
+            : `Your licence expires in ${daysLeft} day${daysLeft===1?"":"s"}. Please renew.`;
+  const bar = document.createElement("div");
+  bar.id="renew-banner";
+  bar.style.cssText="position:fixed;left:0;right:0;bottom:0;z-index:60;background:#7a2218;color:#ffe9e6;padding:13px 18px;display:flex;align-items:center;justify-content:center;gap:14px;font-size:13.5px;box-shadow:0 -4px 16px rgba(0,0,0,.15);";
+  bar.innerHTML = `<span style="font-size:16px;">⚠️</span><span><b>${vi}</b><br><span style="opacity:.85">${en}</span></span>
+    <button onclick="this.parentElement.remove()" style="background:rgba(255,255,255,.18);border:none;color:#fff;border-radius:8px;padding:7px 12px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;">Đã hiểu / OK</button>`;
+  document.body.appendChild(bar);
+}
+
+/* ---------- boot ---------- */
+(async function boot(){
+  const stored = localStorage.getItem(LS_KEY);
+  if(stored){
+    try{
+      const {key, email} = JSON.parse(stored);
+      const res = await verifyKey(key);
+      if(res.ok){
+        CRYPTO_KEY = await deriveKey(email);
+        await loadData();
+        render();
+        maybeWarn(res.daysLeft);
+        return;
+      } else if(res.expired){
+        showGate("Mã đã hết hạn. Vui lòng gia hạn. / Licence expired. Please renew.");
+        return;
+      }
+    }catch(e){}
+  }
+  showGate("");
+})();
+
+</script>
+</body>
+</html>

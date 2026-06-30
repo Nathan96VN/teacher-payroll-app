@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Đăng nhập · Lương Giáo Viên</title>
+<style>
+  :root{
+    --ink:#13211d; --soft:#5d6f69; --line:#e2e9e6; --line-soft:#eef3f1;
+    --paper:#fff; --canvas:#f4f7f5; --teal:#0d7a6f; --teal-deep:#0a5a52; --teal-soft:#e4f2ef;
+    --gold:#c08a2d; --gold-soft:#f7efdf; --amber:#b8860b; --amber-soft:#fbf3e0; --rose:#b3473f; --rose-soft:#f7e9e7;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Inter',-apple-system,sans-serif;background:var(--canvas);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100vh;}
+  .lang{position:fixed;top:16px;right:18px;display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff;}
+  .lang button{border:none;background:none;font-family:inherit;font-size:12.5px;font-weight:600;padding:6px 11px;cursor:pointer;color:var(--soft);}
+  .lang button.on{background:var(--ink);color:#fff;}
+  .wrap{max-width:430px;margin:0 auto;padding:7vh 18px;}
+  .head{display:flex;align-items:center;gap:11px;justify-content:center;margin-bottom:26px;}
+  .mark{width:40px;height:40px;border-radius:10px;background:var(--teal);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;}
+  .head .t{font-weight:700;font-size:16px;}.head .s{font-size:12px;color:var(--soft);}
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:28px;}
+  h1{font-size:21px;font-weight:680;margin-bottom:5px;}
+  .sub{font-size:14px;color:var(--soft);margin-bottom:22px;}
+  label{display:block;font-size:12.5px;font-weight:600;color:var(--soft);margin:15px 0 6px;}
+  label:first-of-type{margin-top:0;}
+  input{width:100%;height:44px;border:1px solid var(--line);border-radius:10px;padding:0 13px;font-family:inherit;font-size:14px;background:#fff;}
+  input:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px var(--teal-soft);}
+  .btn{font-family:inherit;font-weight:600;font-size:15px;border:none;cursor:pointer;border-radius:11px;padding:13px 20px;background:var(--teal);color:#fff;width:100%;margin-top:22px;}
+  .btn:hover{background:var(--teal-deep);}
+  .btn:disabled{opacity:.6;cursor:not-allowed;}
+  .switch{text-align:center;font-size:13.5px;color:var(--soft);margin-top:18px;}
+  .switch a{color:var(--teal);font-weight:600;cursor:pointer;}
+  .note{background:var(--teal-soft);border-radius:10px;padding:12px 14px;font-size:12.5px;color:var(--teal-deep);margin-top:18px;line-height:1.5;}
+  .err{background:var(--rose-soft);color:var(--rose);font-size:13px;padding:10px 12px;border-radius:9px;margin-bottom:14px;display:none;}
+  .err.show{display:block;}
+  .pending{background:var(--amber-soft);border:1px solid #eedcae;border-radius:13px;padding:24px;text-align:center;}
+  .pending .ic{width:48px;height:48px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 13px;border:1px solid #eedcae;color:var(--amber);}
+  .pending h3{font-size:18px;margin-bottom:7px;}
+  .pending p{font-size:13.5px;color:#7a5a1c;}
+  .plan-row{display:flex;gap:10px;margin-top:6px;}
+  .plan{flex:1;border:1.5px solid var(--line);border-radius:11px;padding:13px;cursor:pointer;text-align:center;transition:.15s;}
+  .plan.sel{border-color:var(--teal);background:var(--teal-soft);}
+  .plan .pn{font-weight:700;font-size:14px;}
+  .plan .pp{font-size:12px;color:var(--soft);margin-top:2px;}
+  .backend-flag{background:#fff7e6;border:1px dashed #e0c06a;color:#8a6d1c;font-size:11.5px;padding:8px 11px;border-radius:9px;margin-top:16px;line-height:1.45;}
+  [data-en]{display:none !important;}
+  body.en [data-vi]{display:none !important;}
+  body.en [data-en]{display:revert !important;}
+</style>
+</head>
+<body>
+<div class="lang"><button class="on" onclick="setLang('vi',this)">VI</button><button onclick="setLang('en',this)">EN</button></div>
+
+<div class="wrap">
+  <div class="head"><div class="mark">L</div><div><div class="t">Lương Giáo Viên</div><div class="s">Teacher Payroll</div></div></div>
+
+  <!-- REGISTER -->
+  <div class="card" id="view-register">
+    <h1 data-vi>Tạo tài khoản trung tâm</h1><h1 data-en>Create your centre account</h1>
+    <p class="sub" data-vi>Đăng ký trung tâm. Sau khi thanh toán, mã truy cập sẽ được gửi qua email.</p>
+    <p class="sub" data-en>Register your centre. After payment, your access key is emailed to you.</p>
+    <div class="err" id="reg-err"></div>
+    <label data-vi>Tên trường / trung tâm</label><label data-en>School / Center name</label>
+    <input id="reg-centre" placeholder="Greenfield Language Centre">
+    <label data-vi>Tên của bạn</label><label data-en>Your name</label>
+    <input id="reg-name" placeholder="Nguyễn Văn A">
+    <label>Email</label>
+    <input id="reg-email" type="email" placeholder="ten@trungtam.vn">
+    <label data-vi>Mật khẩu</label><label data-en>Password</label>
+    <input id="reg-pw" type="password" placeholder="••••••••">
+    <label data-vi>Chọn gói</label><label data-en>Choose a plan</label>
+    <div class="plan-row">
+      <div class="plan sel" data-plan="monthly" onclick="selPlan(this)"><div class="pn">₫300K</div><div class="pp" data-vi>/tháng</div><div class="pp" data-en>/month</div></div>
+      <div class="plan" data-plan="yearly" onclick="selPlan(this)"><div class="pn">₫3M</div><div class="pp" data-vi>/năm · 2 tháng free</div><div class="pp" data-en>/year · 2 free</div></div>
+    </div>
+    <button class="btn" id="reg-btn" onclick="doRegister()"><span data-vi>Đăng ký & tiếp tục thanh toán</span><span data-en>Register & continue to payment</span></button>
+    <div class="note" data-vi>Chỉ thông tin tài khoản được lưu trên máy chủ của chúng tôi. Dữ liệu lương được mã hoá trên thiết bị của bạn — chúng tôi không bao giờ thấy.</div>
+    <div class="note" data-en>Only your account details are stored on our server. Your payroll data is encrypted on your own device — we never see it.</div>
+    <div class="switch"><span data-vi>Đã có tài khoản?</span><span data-en>Already registered?</span> <a onclick="showView('login')"><span data-vi>Đăng nhập</span><span data-en>Log in</span></a></div>
+  </div>
+
+  <!-- LOGIN -->
+  <div class="card" id="view-login" style="display:none;">
+    <h1 data-vi>Đăng nhập</h1><h1 data-en>Log in</h1>
+    <p class="sub" data-vi>Vào trung tâm của bạn.</p><p class="sub" data-en>Access your centre.</p>
+    <div class="err" id="login-err"></div>
+    <label>Email</label>
+    <input id="login-email" type="email" placeholder="ten@trungtam.vn">
+    <label data-vi>Mật khẩu</label><label data-en>Password</label>
+    <input id="login-pw" type="password" placeholder="••••••••">
+    <button class="btn" id="login-btn" onclick="doLogin()"><span data-vi>Đăng nhập</span><span data-en>Log in</span></button>
+    <div class="note" data-vi>Đăng nhập được kiểm tra an toàn với máy chủ. Dữ liệu lương tải từ thiết bị này, đã mã hoá — không rời khỏi máy của bạn.</div>
+    <div class="note" data-en>Your login is checked securely with the server. Your payroll data loads from this device, encrypted — it never leaves your computer.</div>
+    <div class="switch"><span data-vi>Trung tâm mới?</span><span data-en>New centre?</span> <a onclick="showView('register')"><span data-vi>Đăng ký</span><span data-en>Register</span></a> · <a onclick="doForgot()"><span data-vi>Quên mật khẩu</span><span data-en>Forgot password</span></a></div>
+  </div>
+
+  <!-- PENDING -->
+  <div class="card" id="view-pending" style="display:none;">
+    <div class="pending">
+      <div class="ic">✓</div>
+      <h3 data-vi>Đã nhận đăng ký</h3><h3 data-en>Registration received</h3>
+      <p data-vi>Cảm ơn! Trung tâm của bạn đã được đăng ký. Sau khi xác nhận thanh toán, chúng tôi sẽ gửi mã truy cập qua email — thường trong ít phút đến vài giờ. Sau đó bạn có thể đăng nhập và bắt đầu.</p>
+      <p data-en>Thanks! Your centre is registered. Once payment is confirmed, we'll email your access key — usually within minutes to a few hours. Then you can log in and start.</p>
+    </div>
+    <div class="switch" style="margin-top:20px;"><a onclick="showView('login')"><span data-vi>Quay lại đăng nhập</span><span data-en>Back to log in</span></a></div>
+  </div>
+
+  <div class="backend-flag">
+    ⚙ <b data-vi>Lưu ý kỹ thuật:</b><b data-en>Developer note:</b>
+    <span data-vi> Các trang này đã sẵn sàng kết nối Supabase. Đăng ký/đăng nhập thật sẽ hoạt động khi điền khoá Supabase ở đầu file và bật phần code BACKEND.</span>
+    <span data-en> These pages are Supabase-ready. Real register/login switches on once you add Supabase keys at the top of the file and enable the BACKEND code.</span>
+  </div>
+</div>
+
+<!-- Supabase JS (loaded but inert until configured) -->
+<script>
+/* This page is served BY the backend, so it calls the same server it lives on. */
+let selectedPlan = "monthly";
+function setLang(l,btn){ document.body.className = l==='en'?'en':''; document.querySelectorAll('.lang button').forEach(b=>b.classList.remove('on')); btn.classList.add('on'); }
+function showView(v){ ['register','login','pending'].forEach(x=>document.getElementById('view-'+x).style.display = x===v?'block':'none'); window.scrollTo(0,0); }
+function selPlan(el){ document.querySelectorAll('.plan').forEach(p=>p.classList.remove('sel')); el.classList.add('sel'); selectedPlan = el.dataset.plan; }
+function err(id,msg){ const e=document.getElementById(id); e.textContent=msg; e.classList.add('show'); }
+function clearErr(id){ document.getElementById(id).classList.remove('show'); }
+const isEn = () => document.body.classList.contains('en');
+
+async function doRegister(){
+  clearErr('reg-err');
+  const centre_name=document.getElementById('reg-centre').value.trim();
+  const contact_name=document.getElementById('reg-name').value.trim();
+  const email=document.getElementById('reg-email').value.trim();
+  const password=document.getElementById('reg-pw').value;
+  if(!centre_name||!contact_name||!email||!password){ err('reg-err', isEn()?'Please fill in all fields.':'Vui lòng điền đầy đủ thông tin.'); return; }
+  try{
+    const res = await fetch('/api/register',{method:'POST',headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({centre_name, contact_name, email, password, plan:selectedPlan})});
+    const data = await res.json();
+    if(!res.ok){ err('reg-err', data.error || 'Registration failed'); return; }
+    showView('pending');
+  }catch(e){ err('reg-err', isEn()?'Network error, please try again.':'Lỗi mạng, vui lòng thử lại.'); }
+}
+
+async function doLogin(){
+  clearErr('login-err');
+  const email=document.getElementById('login-email').value.trim();
+  const password=document.getElementById('login-pw').value;
+  if(!email||!password){ err('login-err', isEn()?'Enter email and password.':'Nhập email và mật khẩu.'); return; }
+  try{
+    const res = await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({email, password})});
+    const data = await res.json();
+    if(!res.ok){ err('login-err', data.error || 'Login failed'); return; }
+    // save the login token for this device
+    localStorage.setItem('tp_token', data.token);
+    localStorage.setItem('tp_role', data.role);
+    if(data.role === 'admin'){ window.location.href = '/admin-dashboard.html'; return; }
+    if(data.status !== 'active'){
+      err('login-err', isEn()?'Your account is not active yet. Please complete payment — we will email your key.':'Tài khoản chưa kích hoạt. Vui lòng hoàn tất thanh toán — chúng tôi sẽ gửi mã qua email.');
+      return;
+    }
+    // active centre → go to the payroll app
+    window.location.href = '/index.html';
+  }catch(e){ err('login-err', isEn()?'Network error, please try again.':'Lỗi mạng, vui lòng thử lại.'); }
+}
+
+function doForgot(){
+  alert(isEn()?'Please email us to reset your password for now.':'Vui lòng email cho chúng tôi để đặt lại mật khẩu.');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin · Teacher Payroll</title>
+<style>
+  :root{
+    --ink:#13211d; --soft:#5d6f69; --line:#e2e9e6; --line-soft:#eef3f1;
+    --paper:#fff; --canvas:#f4f7f5; --teal:#0d7a6f; --teal-deep:#0a5a52; --teal-soft:#e4f2ef;
+    --gold:#c08a2d; --gold-soft:#f7efdf; --amber:#b8860b; --amber-soft:#fbf3e0; --rose:#b3473f; --rose-soft:#f7e9e7;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Inter',-apple-system,sans-serif;background:var(--canvas);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased;}
+  .mark{width:36px;height:36px;border-radius:9px;background:var(--teal);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;}
+
+  /* admin login gate */
+  #gate{max-width:400px;margin:9vh auto;padding:0 18px;}
+  .ghead{display:flex;align-items:center;gap:11px;justify-content:center;margin-bottom:22px;}
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:28px;}
+  h1.gt{font-size:20px;text-align:center;margin-bottom:5px;}
+  .gsub{font-size:13.5px;color:var(--soft);text-align:center;margin-bottom:20px;}
+  label{display:block;font-size:12.5px;font-weight:600;color:var(--soft);margin:14px 0 6px;}
+  input,select{width:100%;height:44px;border:1px solid var(--line);border-radius:10px;padding:0 13px;font-family:inherit;font-size:14px;background:#fff;}
+  input:focus,select:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px var(--teal-soft);}
+  .btn{font-family:inherit;font-weight:600;font-size:15px;border:none;cursor:pointer;border-radius:11px;padding:13px 20px;background:var(--teal);color:#fff;width:100%;margin-top:20px;}
+  .btn:hover{background:var(--teal-deep);}
+  .err{background:var(--rose-soft);color:var(--rose);font-size:13px;padding:10px 12px;border-radius:9px;margin-bottom:14px;display:none;}
+  .err.show{display:block;}
+
+  /* dashboard */
+  #dash{display:none;}
+  .adm{display:flex;min-height:100vh;}
+  .side{width:220px;background:var(--ink);color:#cde0db;padding:22px 16px;flex-shrink:0;}
+  .side .brand{display:flex;align-items:center;gap:10px;margin-bottom:26px;color:#fff;}
+  .side .brand .t{font-weight:700;font-size:15px;}
+  .side nav a{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;font-size:14px;color:#9fbab4;cursor:pointer;margin-bottom:3px;}
+  .side nav a.on,.side nav a:hover{background:rgba(255,255,255,.08);color:#fff;}
+  .side .out{margin-top:22px;font-size:12.5px;color:#7e9a94;cursor:pointer;padding:10px 12px;}
+  .main{flex:1;padding:30px 34px;overflow:auto;}
+  .main-head h1{font-size:23px;}
+  .main-sub{color:var(--soft);font-size:14px;margin-bottom:22px;}
+  .demobar{background:var(--gold-soft);border:1px dashed #e0c06a;color:#8a6d1c;font-size:12.5px;padding:10px 14px;border-radius:10px;margin-bottom:20px;line-height:1.45;}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
+  .stat{background:var(--paper);border:1px solid var(--line);border-radius:13px;padding:16px 18px;}
+  .stat .n{font-size:25px;font-weight:700;letter-spacing:-.02em;}
+  .stat .l{font-size:12.5px;color:var(--soft);margin-top:2px;}
+  .stat.accent .n{color:var(--teal);}.stat.warn .n{color:var(--amber);}.stat.off .n{color:var(--rose);}
+  .toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:12px;}
+  .search{flex:1;max-width:300px;height:40px;}
+  .tbl-wrap{background:var(--paper);border:1px solid var(--line);border-radius:14px;overflow:hidden;}
+  table{width:100%;border-collapse:collapse;}
+  th{text-align:left;font-size:11.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--soft);padding:13px 16px;border-bottom:1px solid var(--line);background:var(--line-soft);}
+  td{padding:14px 16px;border-bottom:1px solid var(--line-soft);font-size:13.5px;vertical-align:middle;}
+  tr:last-child td{border-bottom:none;}
+  .centre-cell .nm{font-weight:600;display:block;}
+  .centre-cell .em{font-size:12px;color:var(--soft);}
+  .tag{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;padding:4px 9px;border-radius:20px;}
+  .tag .d{width:6px;height:6px;border-radius:50%;}
+  .tag.active{background:var(--teal-soft);color:var(--teal);}.tag.active .d{background:var(--teal);}
+  .tag.pend{background:var(--amber-soft);color:var(--amber);}.tag.pend .d{background:var(--amber);}
+  .tag.exp{background:var(--rose-soft);color:var(--rose);}.tag.exp .d{background:var(--rose);}
+  .pay{font-size:11.5px;font-weight:600;color:var(--teal);}
+  .pay.no{color:var(--soft);}
+  .row-actions{display:flex;gap:7px;justify-content:flex-end;}
+  .act{font-family:inherit;font-size:12.5px;font-weight:600;border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 11px;cursor:pointer;color:var(--ink);white-space:nowrap;}
+  .act:hover{border-color:var(--teal);color:var(--teal);}
+  .act.key{background:var(--teal);color:#fff;border-color:var(--teal);}.act.key:hover{background:var(--teal-deep);color:#fff;}
+  .act.danger:hover{border-color:var(--rose);color:var(--rose);}
+  .mbg{position:fixed;inset:0;background:rgba(19,33,29,.5);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;padding:20px;z-index:80;}
+  .mbg.open{display:flex;}
+  .modal{background:#fff;border-radius:16px;max-width:460px;width:100%;padding:26px;box-shadow:0 30px 70px rgba(0,0,0,.3);}
+  .modal h3{font-size:18px;margin-bottom:4px;}
+  .modal .ms{font-size:13px;color:var(--soft);margin-bottom:16px;}
+  .keyout{background:var(--ink);color:#9be8dd;font-family:ui-monospace,Menlo,monospace;font-size:12px;padding:13px;border-radius:10px;word-break:break-all;margin:10px 0;}
+  .emailprev{background:var(--canvas);border:1px solid var(--line);border-radius:10px;padding:13px;font-size:12px;color:var(--soft);white-space:pre-wrap;max-height:170px;overflow:auto;margin-top:8px;}
+  .mclose{float:right;cursor:pointer;color:var(--soft);font-size:20px;line-height:1;}
+  @media(max-width:760px){.stats{grid-template-columns:1fr 1fr;}.side{width:60px;}.side .brand .t,.side nav a span,.side .out{display:none;}}
+</style>
+</head>
+<body>
+
+<!-- ADMIN LOGIN -->
+<div id="gate">
+  <div class="ghead"><div class="mark">L</div><div><div style="font-weight:700;">Admin</div><div style="font-size:12px;color:var(--soft);">Teacher Payroll</div></div></div>
+  <div class="card">
+    <h1 class="gt">Admin log in</h1>
+    <div class="gsub">Manage centres, keys and renewals.</div>
+    <div class="err" id="gate-err"></div>
+    <label>Email</label>
+    <input id="adm-email" type="email" placeholder="you@youremail.com" onkeydown="if(event.key==='Enter')adminLogin()">
+    <label>Password</label>
+    <input id="adm-pw" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')adminLogin()">
+    <button class="btn" onclick="adminLogin()">Log in</button>
+    <div style="font-size:11.5px;color:var(--soft);margin-top:14px;line-height:1.45;" id="gate-hint"></div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dash">
+  <div class="adm">
+    <aside class="side">
+      <div class="brand"><div class="mark">L</div><div class="t">Admin</div></div>
+      <nav>
+        <a class="on"><span>Schools / Centers</span></a>
+        <a><span>Renewals due</span></a>
+        <a><span>Settings</span></a>
+      </nav>
+      <div class="out" onclick="logout()">Log out</div>
+    </aside>
+    <main class="main">
+      <div class="main-head"><h1>Schools / Centers</h1></div>
+      <div class="main-sub">Everyone who has registered. Issue keys, send emails, or mark inactive.</div>
+      <div class="demobar" id="demobar"></div>
+
+      <div class="stats" id="stats"></div>
+
+      <div class="toolbar">
+        <input class="search" id="search" placeholder="Search centres…">
+        <span style="font-size:13px;color:var(--soft);" id="count"></span>
+      </div>
+
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>School / Center</th><th>Status</th><th>Payment</th><th>Expires</th><th style="text-align:right;">Actions</th></tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- key modal -->
+<div class="mbg" id="m-key">
+  <div class="modal">
+    <span class="mclose" onclick="closeM('m-key')">×</span>
+    <h3>Send licence key</h3>
+    <div class="ms" id="key-centre"></div>
+    <label>Licence length</label>
+    <select id="key-len"><option value="1">1 month</option><option value="3">3 months</option><option value="12">1 year</option><option value="0">No expiry</option></select>
+    <div class="keyout" id="key-val">— click generate —</div>
+    <button class="act key" style="width:auto;" onclick="genKeyModal()">Generate key</button>
+    <label style="margin-top:14px;">Email that will be sent</label>
+    <div class="emailprev" id="key-email"></div>
+    <button class="btn" onclick="sendKeyEmail()">✉ Open email to centre</button>
+  </div>
+</div>
+
+<!-- remove modal -->
+<div class="mbg" id="m-remove">
+  <div class="modal">
+    <span class="mclose" onclick="closeM('m-remove')">×</span>
+    <h3>Mark centre inactive</h3>
+    <div class="ms" id="rm-centre"></div>
+    <div class="emailprev" id="rm-email"></div>
+    <p style="font-size:12.5px;color:var(--soft);margin-top:13px;">Their payroll data stays safe on their own device. Marking inactive stops their access until they pay again.</p>
+    <button class="btn" style="background:var(--rose);" onclick="sendInactiveEmail()">✉ Open notice email</button>
+  </div>
+</div>
+
+<script>
+/* Served by the backend — calls the same server. Requires admin login. */
+const token = localStorage.getItem('tp_token');
+const role = localStorage.getItem('tp_role');
+let CENTRES = [];
+
+function api(path, opts={}){
+  return fetch(path, Object.assign({ headers: Object.assign({
+    'Content-Type':'application/json', 'Authorization':'Bearer '+token
+  }, opts.headers||{}) }, opts)).then(async r => {
+    const d = await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(d.error || ('Error '+r.status));
+    return d;
+  });
+}
+
+// gate: must be logged in as admin
+if(!token || role !== 'admin'){
+  document.body.innerHTML = '<div style="max-width:380px;margin:12vh auto;font-family:Inter,sans-serif;text-align:center;color:#13211d;">'
+    + '<h2>Admin login required</h2><p style="color:#5d6f69;">Please log in with your admin account.</p>'
+    + '<a href="/auth.html" style="display:inline-block;margin-top:14px;background:#0d7a6f;color:#fff;padding:12px 20px;border-radius:11px;text-decoration:none;font-weight:600;">Go to login</a></div>';
+}
+
+function daysLeft(exp){ if(!exp) return null; const t=new Date(); t.setHours(0,0,0,0); const d=new Date(+exp.slice(0,4),+exp.slice(4,6)-1,+exp.slice(6,8)); d.setHours(0,0,0,0); return Math.round((d-t)/86400000); }
+function fmtDate(exp){ return exp? (exp.slice(6,8)+" / "+exp.slice(4,6)+" / "+exp.slice(0,4)) : "—"; }
+function esc(s){ return (s||"").replace(/'/g,"\\'").replace(/</g,"&lt;"); }
+
+async function loadCentres(){
+  try{
+    const data = await api('/api/admin/centres');
+    CENTRES = (data.centres||[]).map(r=>({ id:r.id, centre_name:r.centre_name, email:r.email, status:r.status, paid:r.paid, exp:r.expiry||"" }));
+    document.getElementById('demobar').style.display='none';
+    renderStats(); renderRows();
+  }catch(e){
+    document.getElementById('demobar').innerHTML = '⚠ '+e.message;
+  }
+}
+function renderStats(){
+  const active=CENTRES.filter(c=>c.status==='active').length;
+  const pend=CENTRES.filter(c=>c.status==='pending_payment').length;
+  const due=CENTRES.filter(c=>{const d=daysLeft(c.exp);return c.status==='active'&&d!==null&&d<=3&&d>=0;}).length;
+  const off=CENTRES.filter(c=>c.status==='expired').length;
+  document.getElementById('stats').innerHTML=`
+    <div class="stat accent"><div class="n">${active}</div><div class="l">Active schools</div></div>
+    <div class="stat warn"><div class="n">${pend}</div><div class="l">Awaiting approval</div></div>
+    <div class="stat"><div class="n">${due}</div><div class="l">Renewals in 3 days</div></div>
+    <div class="stat off"><div class="n">${off}</div><div class="l">Inactive</div></div>`;
+}
+function renderRows(){
+  const q=(document.getElementById('search').value||"").toLowerCase();
+  const list=CENTRES.filter(c=> c.centre_name.toLowerCase().includes(q)||c.email.toLowerCase().includes(q));
+  document.getElementById('count').textContent=list.length+" schools";
+  document.getElementById('rows').innerHTML = list.map(c=>{
+    const d=daysLeft(c.exp); let statusTag, expCell, actions;
+    if(c.status==='pending_payment'){
+      statusTag=`<span class="tag pend"><span class="d"></span>Awaiting approval</span>`;
+      expCell=`<span style="color:var(--soft);">—</span>`;
+      actions=`<button class="act key" onclick="issueKey(${c.id},'${esc(c.centre_name)}','${c.email}')">Send key</button>`;
+    } else if(c.status==='expired'){
+      statusTag=`<span class="tag exp"><span class="d"></span>Inactive</span>`;
+      expCell=`<span style="color:var(--rose);">Expired ${fmtDate(c.exp)}</span>`;
+      actions=`<button class="act key" onclick="issueKey(${c.id},'${esc(c.centre_name)}','${c.email}')">Reactivate</button>`;
+    } else {
+      statusTag=`<span class="tag active"><span class="d"></span>Active</span>`;
+      expCell = (d!==null&&d<=3&&d>=0) ? `<span style="color:var(--amber);font-weight:600;">${fmtDate(c.exp)} · in ${d}d</span>` : fmtDate(c.exp);
+      actions=`<button class="act" onclick="issueKey(${c.id},'${esc(c.centre_name)}','${c.email}')">Renew key</button>
+               <button class="act danger" onclick="markInactive(${c.id})">Mark inactive</button>`;
+    }
+    const payCell = c.paid ? `<span class="pay">✓ Received</span>` : `<span class="pay no">— Not yet</span>`;
+    return `<tr><td><div class="centre-cell"><span class="nm">${esc(c.centre_name)}</span><span class="em">${c.email}</span></div></td>
+      <td>${statusTag}</td><td>${payCell}</td><td>${expCell}</td>
+      <td><div class="row-actions">${actions}</div></td></tr>`;
+  }).join("");
+}
+
+async function issueKey(id, centre, email){
+  const months = prompt("Licence length in months for "+centre+"?\n(1 = monthly, 12 = yearly, 0 = no expiry)", "1");
+  if(months===null) return;
+  try{
+    const data = await api('/api/admin/issue-key',{method:'POST',body:JSON.stringify({centre_id:id, months:parseInt(months)})});
+    // open a pre-filled email with the key
+    const exp = data.expiry ? ("\nValid until / Hạn dùng: "+data.expiry.slice(6,8)+"/"+data.expiry.slice(4,6)+"/"+data.expiry.slice(0,4)) : "";
+    const body = "Xin chào "+centre+",\n\nMã giấy phép của bạn:\n"+data.licence_key+exp+
+      "\n\n1. Mở: "+location.origin+"/index.html\n2. Nhập email này và mã để mở khoá.\n\n--- English ---\nYour licence key:\n"+data.licence_key+"\nOpen the app, enter this email and the key.\n\nBest regards";
+    window.location.href = "mailto:"+encodeURIComponent(email)+"?subject="+encodeURIComponent("Your Teacher Payroll licence key")+"&body="+encodeURIComponent(body);
+    loadCentres();
+  }catch(e){ alert(e.message); }
+}
+async function markInactive(id){
+  if(!confirm("Mark this school inactive? Their data stays safe on their device.")) return;
+  try{ await api('/api/admin/mark-inactive',{method:'POST',body:JSON.stringify({centre_id:id})}); loadCentres(); }
+  catch(e){ alert(e.message); }
+}
+function logout(){ localStorage.removeItem('tp_token'); localStorage.removeItem('tp_role'); window.location.href='/auth.html'; }
+
+document.getElementById('search').addEventListener('input', renderRows);
+if(token && role==='admin') loadCentres();
+</script>
+</body>
+</html>
