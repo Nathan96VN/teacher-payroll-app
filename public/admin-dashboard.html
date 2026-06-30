@@ -86,30 +86,53 @@
     <aside class="side">
       <div class="brand"><div class="mark">L</div><div class="t">Admin</div></div>
       <nav>
-        <a class="on"><span>Schools / Centers</span></a>
-        <a><span>Renewals due</span></a>
-        <a><span>Settings</span></a>
+        <a class="on" id="nav-schools" onclick="showSection('schools')"><span>Schools / Centers</span></a>
+        <a id="nav-renewals" onclick="showSection('renewals')"><span>Renewals due</span></a>
+        <a id="nav-settings" onclick="showSection('settings')"><span>Settings</span></a>
       </nav>
       <div class="out" onclick="logout()">Log out</div>
     </aside>
     <main class="main">
-      <div class="main-head"><h1>Schools / Centers</h1></div>
-      <div class="main-sub">Everyone who has registered. Issue keys, send emails, or mark inactive.</div>
-      <div class="demobar" id="demobar"></div>
 
-      <div class="stats" id="stats"></div>
-
-      <div class="toolbar">
-        <input class="search" id="search" placeholder="Search centres…">
-        <span style="font-size:13px;color:var(--soft);" id="count"></span>
+      <!-- SCHOOLS SECTION -->
+      <div id="section-schools">
+        <div class="main-head"><h1>Schools / Centers</h1></div>
+        <div class="main-sub">Everyone who has registered. Issue keys, send emails, or mark inactive.</div>
+        <div class="demobar" id="demobar"></div>
+        <div class="stats" id="stats"></div>
+        <div class="toolbar">
+          <input class="search" id="search" placeholder="Search schools…">
+          <span style="font-size:13px;color:var(--soft);" id="count"></span>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>School / Center</th><th>Status</th><th>Payment</th><th>Expires</th><th style="text-align:right;">Actions</th></tr></thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
       </div>
 
-      <div class="tbl-wrap">
-        <table>
-          <thead><tr><th>School / Center</th><th>Status</th><th>Payment</th><th>Expires</th><th style="text-align:right;">Actions</th></tr></thead>
-          <tbody id="rows"></tbody>
-        </table>
+      <!-- RENEWALS SECTION -->
+      <div id="section-renewals" style="display:none;">
+        <div class="main-head"><h1>Renewals due</h1></div>
+        <div class="main-sub">Schools whose licence expires within the next 7 days, or has already expired. Renew or send a reminder.</div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>School / Center</th><th>Status</th><th>Expires</th><th style="text-align:right;">Actions</th></tr></thead>
+            <tbody id="renewal-rows"></tbody>
+          </table>
+        </div>
       </div>
+
+      <!-- SETTINGS SECTION -->
+      <div id="section-settings" style="display:none;">
+        <div class="main-head"><h1>Settings</h1></div>
+        <div class="main-sub">Your admin and pricing details.</div>
+        <div class="tbl-wrap" style="padding:22px;">
+          <div id="settings-body" style="font-size:14px;line-height:1.7;color:var(--ink);"></div>
+        </div>
+      </div>
+
     </main>
   </div>
 </div>
@@ -211,6 +234,64 @@ async function markInactive(id){
   catch(e){ alert(e.message); }
 }
 function logout(){ localStorage.removeItem('tp_token'); localStorage.removeItem('tp_role'); window.location.href='/auth.html'; }
+
+/* ---- section navigation ---- */
+function showSection(name){
+  ['schools','renewals','settings'].forEach(s=>{
+    document.getElementById('section-'+s).style.display = s===name ? 'block' : 'none';
+    const nav = document.getElementById('nav-'+s);
+    if(nav) nav.classList.toggle('on', s===name);
+  });
+  if(name==='renewals') renderRenewals();
+  if(name==='settings') renderSettings();
+}
+
+/* ---- renewals due: schools expiring within 7 days or already expired ---- */
+function renderRenewals(){
+  const list = CENTRES.filter(c=>{
+    if(c.status==='expired') return true;
+    const d = daysLeft(c.exp);
+    return c.status==='active' && d!==null && d<=7;
+  }).sort((a,b)=>{
+    const da = daysLeft(a.exp); const db = daysLeft(b.exp);
+    return (da===null?999:da) - (db===null?999:db);
+  });
+  const tbody = document.getElementById('renewal-rows');
+  if(list.length===0){
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--soft);padding:28px;">No renewals due in the next 7 days. 🎉</td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map(c=>{
+    const d = daysLeft(c.exp);
+    let statusTag, expCell;
+    if(c.status==='expired'){
+      statusTag = `<span class="tag exp"><span class="d"></span>Expired</span>`;
+      expCell = `<span style="color:var(--rose);">Expired ${fmtDate(c.exp)}</span>`;
+    } else {
+      statusTag = `<span class="tag active"><span class="d"></span>Active</span>`;
+      expCell = `<span style="color:var(--amber);font-weight:600;">${fmtDate(c.exp)}${d!==null?` · in ${d}d`:''}</span>`;
+    }
+    return `<tr>
+      <td><div class="centre-cell"><span class="nm">${esc(c.centre_name)}</span><span class="em">${c.email}</span></div></td>
+      <td>${statusTag}</td><td>${expCell}</td>
+      <td><div class="row-actions"><button class="act key" onclick="issueKey(${c.id},'${esc(c.centre_name)}','${c.email}')">Renew key</button></div></td>
+    </tr>`;
+  }).join("");
+}
+
+/* ---- settings ---- */
+function renderSettings(){
+  const total = CENTRES.length;
+  const active = CENTRES.filter(c=>c.status==='active').length;
+  document.getElementById('settings-body').innerHTML = `
+    <p><b>Admin account:</b> you're logged in as the admin. Only the admin email set on the server can see this dashboard.</p>
+    <p style="margin-top:12px;"><b>Total schools registered:</b> ${total} &nbsp;·&nbsp; <b>Active:</b> ${active}</p>
+    <p style="margin-top:12px;"><b>Pricing shown to schools:</b> ₫300,000 / month or ₫3,000,000 / year. <span style="color:var(--soft);">(To change pricing, edit the plan labels in auth.html.)</span></p>
+    <p style="margin-top:12px;"><b>Licence keys:</b> generated automatically using your server's secret. Keys you issue here unlock the app at <code>${location.origin}/index.html</code>.</p>
+    <p style="margin-top:12px;color:var(--soft);font-size:13px;">More settings (changing your password, automatic VNPay payments) can be added later.</p>
+    <p style="margin-top:18px;"><button class="act danger" onclick="logout()">Log out of admin</button></p>
+  `;
+}
 
 var _searchEl = document.getElementById('search');
 if (_searchEl) _searchEl.addEventListener('input', renderRows);
