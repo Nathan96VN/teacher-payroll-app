@@ -189,7 +189,7 @@ const I18N = {
     centersetup:"Center setup", setup:"Setup",
     back:"Back to teachers",
     name:"Name", taxstatus:"Tax status", resident:"Resident (progressive)",
-    nonresident:"Non-resident (flat 20%)", paidin:"Paid in", vnddirect:"VND direct",
+    nonresident:"Non-resident (flat 20%)", casual:"Casual / service contract (10%)", allowexempt:"Tax-exempt (meal / uniform / expat perk)", paidin:"Paid in", vnddirect:"VND direct",
     usdrate:"USD rate → VND", ratehour:"Rate / hour (₫)", usdhour:"USD / hour",
     exchange:"₫ per $1", dependents:"Dependents", taxnumber:"Tax number (MST)",
     taxnumberph:"optional", insbase:"Insurance base salary",
@@ -244,7 +244,7 @@ const I18N = {
     centersetup:"Thiết lập trung tâm", setup:"Thiết lập",
     back:"Về danh sách",
     name:"Họ tên", taxstatus:"Tình trạng thuế", resident:"Cư trú (lũy tiến)",
-    nonresident:"Không cư trú (20%)", paidin:"Trả bằng", vnddirect:"VND trực tiếp",
+    nonresident:"Không cư trú (20%)", casual:"Thời vụ / dịch vụ (10%)", allowexempt:"Miễn thuế (ăn ca / đồng phục / phụ cấp nước ngoài)", paidin:"Trả bằng", vnddirect:"VND trực tiếp",
     usdrate:"Tỷ giá USD → VND", ratehour:"Đơn giá / giờ (₫)", usdhour:"USD / giờ",
     exchange:"₫ trên $1", dependents:"Người phụ thuộc", taxnumber:"Mã số thuế (MST)",
     taxnumberph:"không bắt buộc", insbase:"Lương đóng bảo hiểm",
@@ -426,21 +426,26 @@ function calc(tch){
     otExempt += otRateVnd*(+o.hours||0);
   });
 
-  const taxableBase = teachingTaxable + allowance + otherTotal;
+  const allowanceExempt = !!tch.allowanceExempt;
+  const allowanceTaxable = allowanceExempt ? 0 : allowance;
+  const allowanceExemptAmt = allowanceExempt ? allowance : 0;
+  const taxableBase = teachingTaxable + allowanceTaxable + otherTotal;
   const premiumTotal = premium;
-  const gross = taxableBase + premiumTotal + otExempt;
+  const gross = taxableBase + premiumTotal + otExempt + allowanceExemptAmt;
 
+  const casual = tch.type==="casual";
   let insSalary = (tch.insBase && tch.insBase>0) ? tch.insBase : taxableBase;
   const siBase = tg.cap ? Math.min(insSalary, RATES.capSIHI) : insSalary;
   const uiBase = tg.cap ? Math.min(insSalary, RATES.capUI) : insSalary;
-  const siAmt = tg.si ? siBase*RATES.si : 0;
-  const hiAmt = tg.hi ? siBase*RATES.hi : 0;
-  const uiAmt = tg.ui ? uiBase*RATES.ui : 0;
+  const siAmt = (!casual && tg.si) ? siBase*RATES.si : 0;
+  const hiAmt = (!casual && tg.hi) ? siBase*RATES.hi : 0;
+  const uiAmt = (!casual && tg.ui) ? uiBase*RATES.ui : 0;
   const insTotal = siAmt+hiAmt+uiAmt;
 
   const familyDeduction = RATES.personal + tch.deps*RATES.dependent;
   let taxableIncome, pitDue;
   if(tch.type==="non"){ taxableIncome = taxableBase; pitDue = taxableBase*RATES.nonResident; }
+  else if(casual){ taxableIncome = taxableBase; pitDue = taxableBase*0.10; } // service contract: 10% withholding
   else { taxableIncome = Math.max(0, taxableBase - insTotal - familyDeduction); pitDue = pit(taxableIncome); }
 
   const net = gross - insTotal - pitDue;
@@ -499,7 +504,7 @@ function rosterScreen(){
     const row = el("div",{class:"trow"});
     const init = tc.name.trim().split(/\s+/).slice(-2).map(w=>w[0]).join("").toUpperCase();
     const expat = !tc.toggles.ui;
-    const badge = tc.type==="non" ? `<span class="pill pill-gold">20%</span>` : (expat?`<span class="pill pill-teal">expat</span>`:"");
+    const badge = tc.type==="non" ? `<span class="pill pill-gold">20%</span>` : (tc.type==="casual" ? `<span class="pill pill-gold">10%</span>` : (expat?`<span class="pill pill-teal">expat</span>`:""));
     const rateTxt = tc.cur==="usd" ? `$${tc.rate}/h` : vnd(tc.rate)+"/h";
     row.innerHTML = `<div class="tav">${init}</div>
       <div style="flex:1;min-width:0;"><div style="font-weight:600;font-size:14px;">${tc.name} ${badge}</div>
@@ -591,7 +596,7 @@ function detailScreen(){
   grid.appendChild(field(t("name"), `<input id="d-name" value="${esc(tch.name)}">`));
   grid.appendChild(field(t("employeeid"), `<input id="d-empid" value="${esc(tch.empId)}">`));
   grid.appendChild(field(t("taxstatus"),
-    `<select id="d-type"><option value="res" ${tch.type==="res"?"selected":""}>${t("resident")}</option><option value="non" ${tch.type==="non"?"selected":""}>${t("nonresident")}</option></select>`));
+    `<select id="d-type"><option value="res" ${tch.type==="res"?"selected":""}>${t("resident")}</option><option value="non" ${tch.type==="non"?"selected":""}>${t("nonresident")}</option><option value="casual" ${tch.type==="casual"?"selected":""}>${t("casual")}</option></select>`));
   grid.appendChild(field(t("paidin"),
     `<select id="d-cur"><option value="vnd" ${tch.cur==="vnd"?"selected":""}>${t("vnddirect")}</option><option value="usd" ${tch.cur==="usd"?"selected":""}>${t("usdrate")}</option></select>`));
   const rateField = field(tch.cur==="usd"?t("usdhour"):t("ratehour"), `<input id="d-rate" type="number" value="${tch.rate}">`);
@@ -605,7 +610,7 @@ function detailScreen(){
   grid.appendChild(field(t("taxnumber"), `<input id="d-mst" placeholder="${t("taxnumberph")}" value="${esc(tch.mst)}">`));
   grid.appendChild(field(t("allowancename"), `<input id="d-allowname" placeholder="${t("allowancenameph")}" value="${esc(tch.allowanceName||"")}">`));
   const allowField = field(t("allowance"), `<input id="d-allow" type="number" value="${tch.allowance||0}">`);
-  allowField.insertAdjacentHTML("beforeend", `<div class="hint" id="cap-allow"></div>`);
+  allowField.insertAdjacentHTML("beforeend", `<div class="hint" id="cap-allow"></div><label style="display:flex;align-items:center;gap:7px;margin-top:7px;font-size:12.5px;color:var(--ink-soft);cursor:pointer;"><input type="checkbox" id="d-allowexempt" ${tch.allowanceExempt?"checked":""} style="width:16px;height:16px;accent-color:var(--teal);"> ${t("allowexempt")}</label>`);
   grid.appendChild(allowField);
   const insField = field(t("insbase"), `<input id="d-insbase" type="number" value="${tch.insBase||0}">`);
   insField.querySelector("input").insertAdjacentHTML("afterend",`<div class="hint">${t("insbasehint")}</div><div class="hint" id="cap-insbase"></div>`);
@@ -686,7 +691,7 @@ function detailScreen(){
 
   // wire live inputs
   setTimeout(()=>{
-    ["d-name","d-empid","d-type","d-cur","d-rate","d-fx","d-deps","d-mst","d-allow","d-allowname","d-insbase"].forEach(id=>{
+    ["d-name","d-empid","d-type","d-cur","d-rate","d-fx","d-deps","d-mst","d-allow","d-allowexempt","d-allowname","d-insbase"].forEach(id=>{
       const e=document.getElementById(id); if(!e) return;
       e.addEventListener("input", ()=>{ readDetail(tch);
         if(id==="d-cur"){ render(); }
@@ -977,6 +982,7 @@ function readDetail(tch){
   tch.rate=+g("d-rate").value||0; if(g("d-fx")) tch.fx=+g("d-fx").value||0;
   tch.deps=Math.max(0,+g("d-deps").value||0); tch.mst=g("d-mst").value;
   tch.allowance=+g("d-allow").value||0; tch.insBase=+g("d-insbase").value||0;
+  if(g("d-allowexempt")) tch.allowanceExempt=g("d-allowexempt").checked;
   if(g("d-allowname")) tch.allowanceName=g("d-allowname").value;
 }
 
