@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Điều khoản dịch vụ · Terms of Service</title>
+<style>
+  :root{--ink:#14201b;--soft:#5c6b64;--line:#e3eae6;--teal:#0d7a6f;--canvas:#f6f8f9;--paper:#fff;--rose:#b3473f;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--canvas);color:var(--ink);line-height:1.65;}
+  .wrap{max-width:780px;margin:0 auto;padding:0 22px;}
+  header{background:var(--paper);border-bottom:1px solid var(--line);position:sticky;top:0;}
+  .head-in{display:flex;align-items:center;gap:14px;height:62px;}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:16px;}
+  .brand .mark{width:34px;height:34px;border-radius:9px;background:var(--teal);color:#fff;display:flex;align-items:center;justify-content:center;font-size:17px;}
+  .sp{flex:1;}
+  a{color:var(--teal);}
+  .langtog{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;}
+  .langtog button{width:40px;height:32px;border:none;background:var(--paper);font-family:inherit;font-weight:600;font-size:13px;color:var(--soft);cursor:pointer;}
+  .langtog button.on{background:var(--ink);color:#fff;}
+  main{padding:36px 0 80px;}
+  h1{font-size:30px;letter-spacing:-.02em;margin-bottom:6px;}
+  .eff{color:var(--soft);font-size:14px;margin-bottom:22px;}
+  .note{background:#fff7e6;border:1px solid #f0dba8;border-radius:10px;padding:14px 16px;font-size:13.5px;color:#7a5a12;margin-bottom:28px;}
+  h2{font-size:19px;margin:30px 0 8px;letter-spacing:-.01em;}
+  p,li{font-size:15px;color:#27332d;margin-bottom:10px;}
+  ul{padding-left:20px;}
+  [data-en]{display:none;}
+  html[lang="en"] [data-vi]{display:none;}
+  html[lang="en"] [data-en]{display:block;}
+  html[lang="en"] li[data-en]{display:list-item;}
+  .ph{background:#eef3f0;border-radius:4px;padding:0 4px;color:var(--teal);font-weight:600;}
+  .key{background:#fdeceb;border:1px solid #f3c4bf;border-radius:10px;padding:16px 18px;margin:18px 0;}
+  .key h2{margin-top:0;color:var(--rose);}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap head-in">
+    <a href="/landing.html" class="brand"><span class="mark">₫</span> Lương Giáo Viên</a>
+    <div class="sp"></div>
+    <div class="langtog"><button id="lvi" class="on" onclick="L('vi')">VI</button><button id="len" onclick="L('en')">EN</button></div>
+  </div>
+</header>
+<main class="wrap">
+  <h1><span data-vi>Điều khoản dịch vụ</span><span data-en>Terms of Service</span></h1>
+  <div class="eff"><span data-vi>Cập nhật lần cuối: <span class="ph">[NGÀY]</span></span><span data-en>Last updated: <span class="ph">[DATE]</span></span></div>
+
+  <div class="note">
+    <span data-vi><b>Lưu ý:</b> Bản mẫu tham khảo, không phải tư vấn pháp lý. Nhờ luật sư tại Việt Nam rà soát trước khi áp dụng.</span>
+    <span data-en><b>Note:</b> Reference template, not legal advice. Have a Vietnamese lawyer review before use.</span>
+  </div>
+
+  <h2><span data-vi>1. Chấp nhận điều khoản</span><span data-en>1. Acceptance</span></h2>
+  <p><span data-vi>Khi đăng ký hoặc sử dụng Dịch vụ do <span class="ph">[TÊN CÔNG TY]</span> cung cấp, bạn đồng ý với các điều khoản này và Chính sách bảo mật.</span>
+  <span data-en>By registering for or using the Service provided by <span class="ph">[COMPANY NAME]</span>, you agree to these Terms and the Privacy Policy.</span></p>
+
+  <h2><span data-vi>2. Dịch vụ</span><span data-en>2. The Service</span></h2>
+  <p><span data-vi>Dịch vụ là một công cụ phần mềm song ngữ giúp trung tâm tính toán lương, thuế và bảo hiểm cho giáo viên, lập phiếu lương và xuất file. Dịch vụ được cấp quyền sử dụng theo thuê bao và mở khoá bằng mã giấy phép.</span>
+  <span data-en>The Service is a bilingual software tool that helps centres calculate teacher pay, tax and insurance, produce payslips and export files. It is licensed on a subscription basis and unlocked with a licence key.</span></p>
+
+  <h2><span data-vi>3. Tài khoản & giấy phép</span><span data-en>3. Accounts & licence</span></h2>
+  <p><span data-vi>Mỗi trung tâm dùng một giấy phép. Bạn có trách nhiệm bảo mật mã giấy phép và thông tin đăng nhập, không chia sẻ hay bán lại cho bên khác.</span>
+  <span data-en>One licence is for one centre. You are responsible for keeping your licence key and login confidential, and must not share or resell them.</span></p>
+
+  <h2><span data-vi>4. Thanh toán</span><span data-en>4. Payment</span></h2>
+  <p><span data-vi>Phí là <span class="ph">₫300,000/tháng</span> hoặc <span class="ph">₫3,000,000/năm</span>. Thuê bao tự động tiếp tục cho đến khi bạn huỷ. Chúng tôi có thể thay đổi giá và sẽ thông báo trước hợp lý.</span>
+  <span data-en>Fees are <span class="ph">₫300,000/month</span> or <span class="ph">₫3,000,000/year</span>. Subscriptions continue until you cancel. We may change prices with reasonable prior notice.</span></p>
+
+  <h2><span data-vi>5. Huỷ & hoàn tiền</span><span data-en>5. Cancellation & refunds</span></h2>
+  <p><span data-vi>Bạn có thể huỷ bất cứ lúc nào; bạn vẫn dùng được Dịch vụ đến hết kỳ đã thanh toán. Trừ khi luật yêu cầu khác, các khoản phí đã thanh toán cho kỳ đang dùng không được hoàn lại.</span>
+  <span data-en>You may cancel anytime; you keep access until the end of the paid period. Except where the law requires otherwise, fees already paid for the current period are non-refundable.</span></p>
+
+  <div class="key">
+    <h2><span data-vi>6. Công cụ hỗ trợ tính toán — miễn trừ quan trọng</span><span data-en>6. Calculation aid — important disclaimer</span></h2>
+    <p><span data-vi>Dịch vụ là <b>công cụ hỗ trợ tính toán</b>. Các con số là ước tính dựa trên thông tin bạn nhập và biểu thuế/bảo hiểm được công bố. <b>Trung tâm hoàn toàn chịu trách nhiệm</b> kiểm tra số liệu và tuân thủ quy định về thuế, bảo hiểm và lao động. Đây không phải là tư vấn thuế, pháp lý hay kế toán. Chúng tôi không bảo đảm tính chính xác tuyệt đối. Hãy đối chiếu trước khi chi trả hay kê khai.</span>
+    <span data-en>The Service is a <b>calculation aid</b>. Figures are estimates based on the information you enter and published tax/insurance rates. <b>The centre is solely responsible</b> for verifying the figures and for compliance with tax, insurance and labour law. This is not tax, legal or accounting advice. We do not guarantee absolute accuracy. Always verify before paying anyone or filing.</span></p>
+  </div>
+
+  <h2><span data-vi>7. Sử dụng hợp lệ & dữ liệu của bạn</span><span data-en>7. Acceptable use & your data</span></h2>
+  <p><span data-vi>Bạn đồng ý dùng Dịch vụ hợp pháp, nhập dữ liệu chính xác, không sao chép ngược hoặc lạm dụng. Bạn là bên kiểm soát dữ liệu giáo viên của mình và phải có cơ sở hợp pháp/sự đồng ý để xử lý dữ liệu cá nhân của họ.</span>
+  <span data-en>You agree to use the Service lawfully, enter accurate data, and not reverse-engineer or abuse it. You are the controller of your teachers' data and must have a lawful basis/consent to process their personal data.</span></p>
+
+  <h2><span data-vi>8. Tình trạng "nguyên trạng" & giới hạn trách nhiệm</span><span data-en>8. "As is" & limitation of liability</span></h2>
+  <p><span data-vi>Dịch vụ được cung cấp "nguyên trạng" và có thể có thời gian gián đoạn. Trong phạm vi pháp luật cho phép, trách nhiệm của chúng tôi giới hạn ở số phí bạn đã trả trong <span class="ph">[12]</span> tháng gần nhất, và chúng tôi không chịu trách nhiệm cho thiệt hại gián tiếp hay hệ quả.</span>
+  <span data-en>The Service is provided "as is" and may have downtime. To the extent permitted by law, our liability is limited to the fees you paid in the last <span class="ph">[12]</span> months, and we are not liable for indirect or consequential losses.</span></p>
+
+  <h2><span data-vi>9. Sở hữu trí tuệ</span><span data-en>9. Intellectual property</span></h2>
+  <p><span data-vi>Chúng tôi sở hữu phần mềm. Bạn được cấp quyền sử dụng có giới hạn, không độc quyền trong thời gian thuê bao.</span>
+  <span data-en>We own the software. You receive a limited, non-exclusive licence to use it during your subscription.</span></p>
+
+  <h2><span data-vi>10. Chấm dứt</span><span data-en>10. Termination</span></h2>
+  <p><span data-vi>Chúng tôi có thể tạm ngưng hoặc chấm dứt quyền truy cập nếu bạn vi phạm các điều khoản này.</span>
+  <span data-en>We may suspend or end access if you breach these Terms.</span></p>
+
+  <h2><span data-vi>11. Luật áp dụng</span><span data-en>11. Governing law</span></h2>
+  <p><span data-vi>Các điều khoản này được điều chỉnh bởi pháp luật Việt Nam.</span>
+  <span data-en>These Terms are governed by the laws of Vietnam.</span></p>
+
+  <h2><span data-vi>12. Thay đổi & liên hệ</span><span data-en>12. Changes & contact</span></h2>
+  <p><span data-vi>Chúng tôi có thể cập nhật các điều khoản này và sẽ đăng phiên bản mới tại đây. Liên hệ: <span class="ph">[EMAIL LIÊN HỆ]</span>.</span>
+  <span data-en>We may update these Terms and will post the new version here. Contact: <span class="ph">[CONTACT EMAIL]</span>.</span></p>
+</main>
+<script>
+  function L(l){document.documentElement.lang=l;document.getElementById('lvi').classList.toggle('on',l==='vi');document.getElementById('len').classList.toggle('on',l==='en');}
+</script>
+</body>
+</html>
