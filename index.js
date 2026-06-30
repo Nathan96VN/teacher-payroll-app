@@ -39,19 +39,11 @@ const pool = new Pool({
 });
 
 /* ---- middleware ---- */
-// Helmet adds security headers. We relax the Content Security Policy just enough
-// to allow our own pages' inline scripts/styles to run (the app pages use inline JS).
+// Helmet adds security headers. We turn OFF its Content Security Policy because
+// our own pages use inline scripts and inline onclick handlers (served from our
+// own server, so this is safe). All other Helmet protections stay on.
 app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", "data:", "blob:"],
-      connectSrc: ["'self'"],
-      fontSrc: ["'self'", "data:"]
-    }
-  }
+  contentSecurityPolicy: false
 }));
 app.use(cors());
 app.use(express.json());
