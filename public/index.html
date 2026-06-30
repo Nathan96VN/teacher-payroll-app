@@ -218,6 +218,7 @@ const I18N = {
     signdate:"(sign & date)", insbaseLabel:"Insurance base",
     taxableincome:"Taxable income", deduction:"Family deduction",
     disclaimer:"<b>This is a calculation tool.</b> Figures are estimates based on published 2026 rates and the details entered. The center remains responsible for verifying and filing correct tax and insurance. Confirm against current law before payment.",
+    ratestamp:"Tax rates: 2026 PIT Law (Law 109/2025/QH15) · personal deduction ₫15.5M, ₫6.2M/dependent · 5 brackets · SI/HI cap ₫46.8M, UI cap ₫106.2M (Region I) · last verified 30 Jun 2026.",
     slipfoot:"Generated as a calculation aid · 2026 PIT Law (Law 109/2025/QH15) · rates as entered · employer verifies before payment.",
     taxbasis:"Tax basis: 2026 PIT Law", position_val:"English teacher",
     weeklysched:"Weekly schedule", weeklyhint:"the classes this teacher repeats each week",
@@ -230,10 +231,10 @@ const I18N = {
     allowancename:"Allowance name", allowancenameph:"e.g. Housing, Transport",
     otherincome:"Other income", otherhint:"extra paid activities (events, invigilation) at the school's own rates",
     incomename:"Income name", incomenameph:"e.g. Event hosting", amountvnd:"Rate (VND)", hourslabel:"Hours", addincome:"Add income line",
-    overtime:"Overtime", overtimehint:"premium above normal rate is tax & insurance-free (2026 law)",
+    overtime:"Overtime", overtimehint:"all lawful overtime is fully tax-exempt (Law 109/2025)",
     otname:"Description", otnameph:"e.g. Saturday exam prep", otrate:"OT rate", othours:"Hours", addovertime:"Add overtime",
-    otnormalpart:"Overtime — normal portion (taxable)", otpremiumpart:"Overtime premium (tax & insurance-free)",
-    exemptnote:"Premium above normal rate — exempt from PIT & insurance under 2026 law",
+    otnormalpart:"Overtime — normal portion", otpremiumpart:"Overtime premium", overtimeexempt:"Overtime (tax-free)",
+    exemptnote:"All lawful overtime — fully exempt from PIT under Law 109/2025",
   },
   vi:{
     appsub:"Lương giáo viên",
@@ -269,6 +270,7 @@ const I18N = {
     signdate:"(ký, ghi rõ họ tên)", insbaseLabel:"Lương đóng BH",
     taxableincome:"Thu nhập tính thuế", deduction:"Giảm trừ gia cảnh",
     disclaimer:"<b>Đây là công cụ tính toán.</b> Các số liệu là ước tính dựa trên biểu thuế 2026 và thông tin nhập vào. Trung tâm chịu trách nhiệm kiểm tra và kê khai thuế, bảo hiểm chính xác. Vui lòng đối chiếu quy định hiện hành trước khi chi trả.",
+    ratestamp:"Biểu thuế: Luật Thuế TNCN 2026 (Luật 109/2025/QH15) · giảm trừ bản thân ₫15,5tr, ₫6,2tr/người phụ thuộc · 5 bậc · trần BHXH/BHYT ₫46,8tr, trần BHTN ₫106,2tr (Vùng I) · kiểm tra lần cuối 30/06/2026.",
     slipfoot:"Tạo như công cụ hỗ trợ tính toán · Luật Thuế TNCN 2026 (Luật 109/2025/QH15) · theo mức đã nhập · đơn vị tự kiểm tra trước khi chi trả.",
     taxbasis:"Cơ sở thuế: Luật Thuế TNCN 2026", position_val:"Giáo viên tiếng Anh",
     weeklysched:"Lịch dạy hàng tuần", weeklyhint:"các lớp giáo viên dạy lặp lại mỗi tuần",
@@ -281,10 +283,10 @@ const I18N = {
     allowancename:"Tên phụ cấp", allowancenameph:"vd: Nhà ở, Đi lại",
     otherincome:"Thu nhập khác", otherhint:"các hoạt động có trả thêm (sự kiện, coi thi) theo mức của trung tâm",
     incomename:"Tên khoản thu", incomenameph:"vd: Tổ chức sự kiện", amountvnd:"Đơn giá (VND)", hourslabel:"Số giờ", addincome:"Thêm khoản thu",
-    overtime:"Làm thêm giờ", overtimehint:"phần phụ trội trên mức thường được miễn thuế & bảo hiểm (luật 2026)",
+    overtime:"Làm thêm giờ", overtimehint:"toàn bộ tiền làm thêm hợp pháp được miễn thuế (Luật 109/2025)",
     otname:"Mô tả", otnameph:"vd: Luyện thi thứ Bảy", otrate:"Đơn giá OT", othours:"Số giờ", addovertime:"Thêm làm thêm giờ",
-    otnormalpart:"Làm thêm — phần thường (chịu thuế)", otpremiumpart:"Phụ trội làm thêm (miễn thuế & BH)",
-    exemptnote:"Phần phụ trội trên mức thường — miễn thuế TNCN & bảo hiểm theo luật 2026",
+    otnormalpart:"Làm thêm — phần thường", otpremiumpart:"Phụ trội làm thêm", overtimeexempt:"Làm thêm giờ (miễn thuế)",
+    exemptnote:"Toàn bộ tiền làm thêm hợp pháp — miễn thuế TNCN theo Luật 109/2025",
   }
 };
 let lang = 'vi';
@@ -296,7 +298,7 @@ const RATES = {
   dependent: 6_200_000,
   si: 0.08, hi: 0.015, ui: 0.01,
   capSIHI: 46_800_000, capUI: 106_200_000,
-  brackets: [[10e6,.05],[30e6,.10],[50e6,.20],[100e6,.30],[Infinity,.35]],
+  brackets: [[10e6,.05],[30e6,.10],[60e6,.20],[100e6,.30],[Infinity,.35]],
   nonResident: 0.20,
 };
 
@@ -410,21 +412,18 @@ function calc(tch){
   const allowance = +tch.allowance||0;
   const otherTotal = (tch.otherIncome||[]).reduce((a,o)=>a+((+o.rate||0)*(+o.hours||0)),0);
 
-  // overtime: normal-rate portion is taxable, premium above normal is exempt
-  let otNormal=0, otPremium=0;
+  // overtime: under Law 109/2025 all lawful overtime pay is fully PIT-exempt
+  // (residents from 1 Jan 2026, non-residents from 1 Jul 2026). The whole overtime
+  // amount is paid to the teacher but is not part of taxable income.
+  let otExempt=0;
   (tch.overtime||[]).forEach(o=>{
     const otRateVnd = tch.cur==="usd" ? (+o.rate||0)*tch.fx : (+o.rate||0);
-    const hrs = +o.hours||0;
-    const totalOt = otRateVnd*hrs;
-    const normalPortion = Math.min(otRateVnd, vndRate)*hrs; // capped at normal rate
-    const premiumPortion = Math.max(0, totalOt - normalPortion);
-    otNormal += normalPortion;
-    otPremium += premiumPortion;
+    otExempt += otRateVnd*(+o.hours||0);
   });
 
-  const taxableBase = teachingTaxable + allowance + otherTotal + otNormal;
-  const premiumTotal = premium + otPremium;
-  const gross = taxableBase + premiumTotal;
+  const taxableBase = teachingTaxable + allowance + otherTotal;
+  const premiumTotal = premium;
+  const gross = taxableBase + premiumTotal + otExempt;
 
   let insSalary = (tch.insBase && tch.insBase>0) ? tch.insBase : taxableBase;
   const siBase = tg.cap ? Math.min(insSalary, RATES.capSIHI) : insSalary;
@@ -441,7 +440,7 @@ function calc(tch){
 
   const net = gross - insTotal - pitDue;
   return { vndRate, perMin, regPay:teachingTaxable, latePay, premium:premiumTotal, gross, otherTotal,
-    otNormal, otPremium, classPremium:premium,
+    otExempt, classPremium:premium,
     siAmt, hiAmt, uiAmt, insTotal, insSalary, familyDeduction, taxableIncome,
     pitDue, net, allowance };
 }
@@ -518,7 +517,7 @@ function rosterScreen(){
   };
   frag.appendChild(addBtn);
 
-  const disc = el("div",{class:"disclaimer"}); disc.innerHTML = t("disclaimer");
+  const disc = el("div",{class:"disclaimer"}); disc.innerHTML = t("disclaimer") + '<div style="margin-top:9px;padding-top:9px;border-top:1px solid #ecd9b0;font-size:11px;opacity:.85;">' + t("ratestamp") + '</div>';
   frag.appendChild(disc);
   return frag;
 }
@@ -960,10 +959,9 @@ function renderBreakdown(box, tch){
   rows.push(["lab", t("regularpay"), vnd(r.regPay)]);
   if(r.allowance>0) rows.push(["lab", (tch.allowanceName||t("allowance")), vnd(r.allowance)]);
   (tch.otherIncome||[]).forEach(o=>{ const amt=(+o.rate||0)*(+o.hours||0); if(amt>0) rows.push(["lab", o.name||t("otherincome"), vnd(amt)]); });
-  if(r.otNormal>0) rows.push(["lab", t("otnormalpart"), vnd(r.otNormal)]);
+  if(r.otExempt>0) rows.push(["pos", t("overtimeexempt"), vnd(r.otExempt)]);
   if(r.latePay>0) rows.push(["neg", t("latededuct"), "−"+vnd(r.latePay)]);
   if(r.classPremium>0) rows.push(["pos", t("holidaypremium"), vnd(r.classPremium)]);
-  if(r.otPremium>0) rows.push(["pos", t("otpremiumpart"), vnd(r.otPremium)]);
   let html = `<div class="bd-row"><span class="lab">${t("gross")}</span><span class="val">${vnd(r.gross)}</span></div>`;
   let pre = "";
   rows.forEach(([cls,l,v])=>{
@@ -990,9 +988,8 @@ function buildSlipHTML(tch, forPrint){
   let incomeLines = `<div class="slip-line"><span class="l">${L.teachingpay}<span class="en">${I18N.en.teachingpay}</span></span><span class="a">${vnd(r.regPay)}</span></div>`;
   if(r.allowance>0) incomeLines += `<div class="slip-line"><span class="l">${esc(tch.allowanceName)||L.allowance}<span class="en">${tch.allowanceName?I18N.en.allowance:""}</span></span><span class="a">${vnd(r.allowance)}</span></div>`;
   (tch.otherIncome||[]).forEach(o=>{ const amt=(+o.rate||0)*(+o.hours||0); if(amt>0) incomeLines += `<div class="slip-line"><span class="l">${esc(o.name)||L.otherincome}</span><span class="a">${vnd(amt)}</span></div>`; });
-  if(r.otNormal>0) incomeLines += `<div class="slip-line"><span class="l">${L.otnormalpart}</span><span class="a">${vnd(r.otNormal)}</span></div>`;
+  if(r.otExempt>0) incomeLines += `<div class="slip-line"><span class="l">${L.overtimeexempt}<span class="en" style="color:var(--teal);">${L.exemptnote}</span></span><span class="a">${vnd(r.otExempt)}</span></div>`;
   if(r.classPremium>0) incomeLines += `<div class="slip-line"><span class="l">${L.holidaypremium}<span class="en">${I18N.en.holidaypremium}</span></span><span class="a">${vnd(r.classPremium)}</span></div>`;
-  if(r.otPremium>0) incomeLines += `<div class="slip-line"><span class="l">${L.otpremiumpart}<span class="en" style="color:var(--teal);">${L.exemptnote}</span></span><span class="a">${vnd(r.otPremium)}</span></div>`;
   incomeLines += `<div class="slip-line sub"><span class="l">${L.totalincome}</span><span class="a">${vnd(r.gross)}</span></div>`;
 
   // deduction lines
