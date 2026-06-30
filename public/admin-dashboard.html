@@ -80,22 +80,6 @@
 </head>
 <body>
 
-<!-- ADMIN LOGIN -->
-<div id="gate">
-  <div class="ghead"><div class="mark">L</div><div><div style="font-weight:700;">Admin</div><div style="font-size:12px;color:var(--soft);">Teacher Payroll</div></div></div>
-  <div class="card">
-    <h1 class="gt">Admin log in</h1>
-    <div class="gsub">Manage centres, keys and renewals.</div>
-    <div class="err" id="gate-err"></div>
-    <label>Email</label>
-    <input id="adm-email" type="email" placeholder="you@youremail.com" onkeydown="if(event.key==='Enter')adminLogin()">
-    <label>Password</label>
-    <input id="adm-pw" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')adminLogin()">
-    <button class="btn" onclick="adminLogin()">Log in</button>
-    <div style="font-size:11.5px;color:var(--soft);margin-top:14px;line-height:1.45;" id="gate-hint"></div>
-  </div>
-</div>
-
 <!-- DASHBOARD -->
 <div id="dash">
   <div class="adm">
@@ -130,34 +114,6 @@
   </div>
 </div>
 
-<!-- key modal -->
-<div class="mbg" id="m-key">
-  <div class="modal">
-    <span class="mclose" onclick="closeM('m-key')">×</span>
-    <h3>Send licence key</h3>
-    <div class="ms" id="key-centre"></div>
-    <label>Licence length</label>
-    <select id="key-len"><option value="1">1 month</option><option value="3">3 months</option><option value="12">1 year</option><option value="0">No expiry</option></select>
-    <div class="keyout" id="key-val">— click generate —</div>
-    <button class="act key" style="width:auto;" onclick="genKeyModal()">Generate key</button>
-    <label style="margin-top:14px;">Email that will be sent</label>
-    <div class="emailprev" id="key-email"></div>
-    <button class="btn" onclick="sendKeyEmail()">✉ Open email to centre</button>
-  </div>
-</div>
-
-<!-- remove modal -->
-<div class="mbg" id="m-remove">
-  <div class="modal">
-    <span class="mclose" onclick="closeM('m-remove')">×</span>
-    <h3>Mark centre inactive</h3>
-    <div class="ms" id="rm-centre"></div>
-    <div class="emailprev" id="rm-email"></div>
-    <p style="font-size:12.5px;color:var(--soft);margin-top:13px;">Their payroll data stays safe on their own device. Marking inactive stops their access until they pay again.</p>
-    <button class="btn" style="background:var(--rose);" onclick="sendInactiveEmail()">✉ Open notice email</button>
-  </div>
-</div>
-
 <script>
 /* Served by the backend — calls the same server. Requires admin login. */
 const token = localStorage.getItem('tp_token');
@@ -179,6 +135,9 @@ if(!token || role !== 'admin'){
   document.body.innerHTML = '<div style="max-width:380px;margin:12vh auto;font-family:Inter,sans-serif;text-align:center;color:#13211d;">'
     + '<h2>Admin login required</h2><p style="color:#5d6f69;">Please log in with your admin account.</p>'
     + '<a href="/auth.html" style="display:inline-block;margin-top:14px;background:#0d7a6f;color:#fff;padding:12px 20px;border-radius:11px;text-decoration:none;font-weight:600;">Go to login</a></div>';
+} else {
+  // logged in as admin → show the dashboard
+  document.getElementById('dash').style.display = 'block';
 }
 
 function daysLeft(exp){ if(!exp) return null; const t=new Date(); t.setHours(0,0,0,0); const d=new Date(+exp.slice(0,4),+exp.slice(4,6)-1,+exp.slice(6,8)); d.setHours(0,0,0,0); return Math.round((d-t)/86400000); }
@@ -253,7 +212,8 @@ async function markInactive(id){
 }
 function logout(){ localStorage.removeItem('tp_token'); localStorage.removeItem('tp_role'); window.location.href='/auth.html'; }
 
-document.getElementById('search').addEventListener('input', renderRows);
+var _searchEl = document.getElementById('search');
+if (_searchEl) _searchEl.addEventListener('input', renderRows);
 if(token && role==='admin') loadCentres();
 </script>
 </body>
