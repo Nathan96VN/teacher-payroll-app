@@ -137,11 +137,12 @@
   .wk-r{margin-bottom:7px;}
   .wk-r input,.wk-r select{height:36px;font-size:13px;padding:0 8px;}
   /* timetable grid */
-  .tt{display:grid;grid-template-columns:178px repeat(7,minmax(78px,1fr));gap:4px 4px;min-width:740px;align-items:center;}
+  .tt{display:grid;grid-template-columns:206px repeat(7,minmax(78px,1fr));gap:4px 4px;min-width:760px;align-items:center;}
   .tt-th{font-size:11px;font-weight:600;color:var(--ink-soft);text-align:center;padding:4px 0;}
   .tt-th.tt-time{text-align:left;}
-  .tt-time-cell{display:flex;align-items:center;gap:4px;}
-  .tt-time-cell input{height:34px;font-size:11px;padding:0 4px;min-width:0;}
+  .tt-time-cell{display:flex;align-items:center;gap:5px;}
+  .tt-time-cell input{height:34px;font-size:12px;padding:0 5px;min-width:0;}
+  .tt-time-cell input[type=time]{flex:1;}
   .tt-dash{color:var(--ink-soft);font-size:12px;}
   .tt-delrow{width:24px;height:24px;flex-shrink:0;border:none;}
   .tt-delrow svg{width:13px;height:13px;}
@@ -189,7 +190,7 @@ const I18N = {
     back:"Back to teachers",
     name:"Name", taxstatus:"Tax status", resident:"Resident (progressive)",
     nonresident:"Non-resident (flat 20%)", paidin:"Paid in", vnddirect:"VND direct",
-    usdrate:"USD rate → VND", ratehour:"Rate / period (₫)", usdhour:"USD / period",
+    usdrate:"USD rate → VND", ratehour:"Rate / hour (₫)", usdhour:"USD / hour",
     exchange:"₫ per $1", dependents:"Dependents", taxnumber:"Tax number (MST)",
     taxnumberph:"optional", insbase:"Insurance base salary",
     insbasehint:"Often a fixed contract figure, not gross. Leave blank to use gross.",
@@ -203,7 +204,7 @@ const I18N = {
     premiumhint:"On: normal + premium shown separately (premium is tax & insurance-free). Off: one flat line.",
     applycaps:"Apply salary caps", capshint:"SI/HI cap ₫46.8M · UI cap ₫106.2M.",
     hourlyrate:"Hourly rate", regularpay:"Teaching pay (taxable)",
-    rateperiod:"Rate per period", periodsmonth:"Periods this month", periodsperclass:"periods per class (tiết)", periodsunit:"tiết",
+    rateperiod:"Rate per hour", periodsmonth:"Hours this month", periodsperclass:"periods per class", periodsunit:"hr",
     latededuct:"Lateness deduction", holidaypremium:"Holiday premium (tax/ins-free)",
     gross:"Gross", pit:"Personal income tax", net:"Net take-home",
     viewpayslip:"View payslip", exportpdf:"Export PDF", exportexcel:"Export Excel",
@@ -244,7 +245,7 @@ const I18N = {
     back:"Về danh sách",
     name:"Họ tên", taxstatus:"Tình trạng thuế", resident:"Cư trú (lũy tiến)",
     nonresident:"Không cư trú (20%)", paidin:"Trả bằng", vnddirect:"VND trực tiếp",
-    usdrate:"Tỷ giá USD → VND", ratehour:"Đơn giá / tiết (₫)", usdhour:"USD / tiết",
+    usdrate:"Tỷ giá USD → VND", ratehour:"Đơn giá / giờ (₫)", usdhour:"USD / giờ",
     exchange:"₫ trên $1", dependents:"Người phụ thuộc", taxnumber:"Mã số thuế (MST)",
     taxnumberph:"không bắt buộc", insbase:"Lương đóng bảo hiểm",
     insbasehint:"Thường là mức cố định theo hợp đồng, không phải lương gộp. Để trống để dùng lương gộp.",
@@ -257,8 +258,8 @@ const I18N = {
     holidaydisplay:"Hiển thị lương lễ", breakpremium:"Tách phần phụ trội",
     premiumhint:"Bật: hiện phần thường + phụ trội riêng (phụ trội miễn thuế & bảo hiểm). Tắt: một dòng gộp.",
     applycaps:"Áp dụng mức trần", capshint:"BHXH/BHYT trần ₫46.8M · BHTN trần ₫106.2M.",
-    hourlyrate:"Đơn giá giờ", regularpay:"Lương tiết dạy (chịu thuế)",
-    rateperiod:"Đơn giá tiết dạy", periodsmonth:"Số tiết dạy", periodsperclass:"số tiết mỗi lớp", periodsunit:"tiết",
+    hourlyrate:"Đơn giá giờ", regularpay:"Lương dạy (chịu thuế)",
+    rateperiod:"Đơn giá giờ dạy", periodsmonth:"Số giờ dạy", periodsperclass:"số tiết mỗi lớp", periodsunit:"giờ",
     latededuct:"Khấu trừ đi muộn", holidaypremium:"Phụ trội lễ (miễn thuế/BH)",
     gross:"Tổng thu nhập", pit:"Thuế TNCN", net:"Thực lĩnh",
     viewpayslip:"Xem phiếu lương", exportpdf:"Xuất PDF", exportexcel:"Xuất Excel",
@@ -386,8 +387,7 @@ function monthOccurrences(tch, year, month){
         const key=dKey(year,month,d)+"_"+slot.id;
         const ded=(tch.deductions&&tch.deductions[key])||null;
         const sched=minutesBetween(start,end);
-        const periods=(row && row.periods!=null) ? row.periods : Math.max(0, sched/45);
-        occ.push({date:d,key,slot:{...slot,start,end},sched,ded,periods,worked:Math.max(0,sched-(ded?ded.mins:0))});
+        occ.push({date:d,key,slot:{...slot,start,end},sched,ded,worked:Math.max(0,sched-(ded?ded.mins:0))});
       }
     }
   });
@@ -396,18 +396,18 @@ function monthOccurrences(tch, year, month){
 
 /* ---------- core calculation (from monthly calendar) ---------- */
 function calc(tch){
-  const ratePeriod = tch.cur==="usd" ? tch.rate*tch.fx : tch.rate; // rate per teaching period (tiết), in VND
+  const ratePerHour = tch.cur==="usd" ? tch.rate*tch.fx : tch.rate; // rate per hour, in VND
   const tg = tch.toggles;
   const occ = monthOccurrences(tch, calState.year, calState.month);
 
-  let regPay=0, latePay=0, premium=0, flatHoliday=0, periodsWorked=0;
+  let regPay=0, latePay=0, premium=0, flatHoliday=0, hoursWorked=0;
   occ.forEach(o=>{
     const m = o.slot.mult||1;
-    const schedPeriods = o.periods||0;
-    const workedPeriods = o.sched>0 ? schedPeriods*(o.worked/o.sched) : 0;
-    periodsWorked += workedPeriods;
-    const workedBase = workedPeriods*ratePeriod;
-    latePay += (schedPeriods-workedPeriods)*ratePeriod;
+    const schedHours = o.sched/60;
+    const workedHours = o.worked/60;
+    hoursWorked += workedHours;
+    const workedBase = workedHours*ratePerHour;
+    latePay += (schedHours-workedHours)*ratePerHour;
     if(m<=1){ regPay += workedBase; }
     else if(tg.split){ regPay += workedBase; premium += workedBase*(m-1); }
     else { flatHoliday += workedBase*m; }
@@ -444,7 +444,7 @@ function calc(tch){
   else { taxableIncome = Math.max(0, taxableBase - insTotal - familyDeduction); pitDue = pit(taxableIncome); }
 
   const net = gross - insTotal - pitDue;
-  return { ratePeriod, periodsWorked, regPay:teachingTaxable, latePay, premium:premiumTotal, gross, otherTotal,
+  return { ratePerHour, hoursWorked, regPay:teachingTaxable, latePay, premium:premiumTotal, gross, otherTotal,
     otExempt, classPremium:premium,
     siAmt, hiAmt, uiAmt, insTotal, insSalary, familyDeduction, taxableIncome,
     pitDue, net, allowance };
@@ -797,19 +797,23 @@ function renderOtherIncome(wrap, tch){
 }
 
 /* ---- timetable grid: explicit time rows × Mon..Sun ---- */
+let _rowSeq = 0;
+function newRowId(){ return "r"+Date.now().toString(36)+"-"+(_rowSeq++); }
 function ensureTimeRows(tch){
   // migrate: if no timeRows yet, derive from existing weekly slots
   if(!tch.timeRows){
     const map = {};
     (tch.weekly||[]).forEach(s=>{
       const k = s.start+"-"+s.end;
-      if(!map[k]){ map[k] = {id:"r"+Object.keys(map).length, start:s.start, end:s.end}; }
+      if(!map[k]){ map[k] = {id:newRowId(), start:s.start, end:s.end}; }
       s.rowId = map[k].id;
     });
     tch.timeRows = Object.values(map).sort((a,b)=> a.start.localeCompare(b.start));
-    if(!tch.timeRows.length) tch.timeRows = [{id:"r0",start:"18:00",end:"19:30"}];
+    if(!tch.timeRows.length) tch.timeRows = [{id:newRowId(),start:"18:00",end:"19:30"}];
   }
-  tch.timeRows.forEach(r=>{ if(r.periods==null) r.periods = Math.max(1, Math.round(minutesBetween(r.start,r.end)/45)); });
+  // repair any duplicate row ids (legacy data) so each row edits independently
+  const seen={};
+  tch.timeRows.forEach(r=>{ if(seen[r.id]) r.id=newRowId(); seen[r.id]=1; });
   return tch.timeRows;
 }
 function renderWeeklyRows(wrap, tch){
@@ -825,7 +829,7 @@ function renderWeeklyRows(wrap, tch){
 
   rows.forEach((r)=>{
     const timeCell = el("div",{class:"tt-time-cell"});
-    timeCell.innerHTML = `<input type="time" value="${r.start}" data-rowid="${r.id}" data-tf="start"><span class="tt-dash">–</span><input type="time" value="${r.end}" data-rowid="${r.id}" data-tf="end"><input type="number" min="0" step="0.5" class="tt-periods" value="${r.periods!=null?r.periods:1}" data-rowid="${r.id}" data-periods title="${t('periodsperclass')}" style="width:52px;margin-left:6px;"><span class="tt-dash" style="font-size:11px;">${t('periodsunit')}</span><button class="tt-delrow iconbtn" data-delrow="${r.id}" title="remove row">${icon.x}</button>`;
+    timeCell.innerHTML = `<input type="time" value="${r.start}" data-rowid="${r.id}" data-tf="start"><span class="tt-dash">–</span><input type="time" value="${r.end}" data-rowid="${r.id}" data-tf="end"><button class="tt-delrow iconbtn" data-delrow="${r.id}" title="remove row">${icon.x}</button>`;
     grid.appendChild(timeCell);
     DOWSEL.forEach(dow=>{
       const slot = tch.weekly.find(s=> s.rowId===r.id && s.dow===dow);
@@ -839,7 +843,7 @@ function renderWeeklyRows(wrap, tch){
   const addRow = el("button",{class:"add-link",style:"margin-top:10px;"}, icon.plus+t("addslot"));
   addRow.onclick = ()=>{
     const last = rows[rows.length-1];
-    tch.timeRows.push({id:"r"+Date.now(), start:last?last.end:"08:00", end:"09:00"});
+    tch.timeRows.push({id:newRowId(), start:last?last.end:"08:00", end:"09:00"});
     renderWeeklyRows(wrap, tch);
   };
   wrap.appendChild(addRow);
@@ -849,15 +853,6 @@ function renderWeeklyRows(wrap, tch){
     inp.addEventListener("change", ()=>{
       const rid=inp.dataset.rowid, f=inp.dataset.tf;
       const row = tch.timeRows.find(r=>r.id===rid); if(row) row[f]=inp.value;
-      renderBreakdown(document.getElementById("breakdown"), tch);
-      renderCalendar(document.getElementById("calwrap"), tch);
-    });
-  });
-  // edit a row's periods (tiết)
-  wrap.querySelectorAll("input[data-periods]").forEach(inp=>{
-    inp.addEventListener("change", ()=>{
-      const row = tch.timeRows.find(r=>r.id===inp.dataset.rowid);
-      if(row) row.periods = Math.max(0, +inp.value||0);
       renderBreakdown(document.getElementById("breakdown"), tch);
       renderCalendar(document.getElementById("calwrap"), tch);
     });
@@ -988,8 +983,8 @@ function readDetail(tch){
 function renderBreakdown(box, tch){
   const r = calc(tch);
   const rows = [];
-  rows.push(["lab", t("rateperiod"), vnd(r.ratePeriod)]);
-  rows.push(["lab", t("periodsmonth"), (Math.round(r.periodsWorked*100)/100).toString()]);
+  rows.push(["lab", t("rateperiod"), vnd(r.ratePerHour)]);
+  rows.push(["lab", t("periodsmonth"), (Math.round(r.hoursWorked*100)/100).toString()]);
   rows.push(["lab", t("regularpay"), vnd(r.regPay)]);
   if(r.allowance>0) rows.push(["lab", (tch.allowanceName||t("allowance")), vnd(r.allowance)]);
   (tch.otherIncome||[]).forEach(o=>{ const amt=(+o.rate||0)*(+o.hours||0); if(amt>0) rows.push(["lab", o.name||t("otherincome"), vnd(amt)]); });
@@ -1055,8 +1050,8 @@ function buildSlipHTML(tch, forPrint){
       <div class="meta-item"><span class="k">${L.name}: </span><span class="v">${tch.name}</span></div>
       <div class="meta-item"><span class="k">${L.position}: </span><span class="v">${L.position_val}</span></div>
       ${mst}
-      <div class="meta-item"><span class="k">${L.rateperiod}: </span><span class="v">${vnd(r.ratePeriod)}</span></div>
-      <div class="meta-item"><span class="k">${L.periodsmonth}: </span><span class="v">${Math.round(r.periodsWorked*100)/100}</span></div>
+      <div class="meta-item"><span class="k">${L.rateperiod}: </span><span class="v">${vnd(r.ratePerHour)}</span></div>
+      <div class="meta-item"><span class="k">${L.periodsmonth}: </span><span class="v">${Math.round(r.hoursWorked*100)/100}</span></div>
       <div class="meta-item"><span class="k">${L.insbaseLabel}: </span><span class="v">${vnd(r.insSalary)}</span></div>
       <div class="meta-item"><span class="k">${L.deduction}: </span><span class="v">${vnd(r.familyDeduction)}</span></div>
       <div class="meta-item"><span class="k">${L.taxableincome}: </span><span class="v">${vnd(r.taxableIncome)}</span></div>
