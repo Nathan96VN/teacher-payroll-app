@@ -189,7 +189,7 @@ const I18N = {
     back:"Back to teachers",
     name:"Name", taxstatus:"Tax status", resident:"Resident (progressive)",
     nonresident:"Non-resident (flat 20%)", paidin:"Paid in", vnddirect:"VND direct",
-    usdrate:"USD rate → VND", ratehour:"Rate / hour (VND)", usdhour:"USD / hour",
+    usdrate:"USD rate → VND", ratehour:"Rate / period (₫)", usdhour:"USD / period",
     exchange:"₫ per $1", dependents:"Dependents", taxnumber:"Tax number (MST)",
     taxnumberph:"optional", insbase:"Insurance base salary",
     insbasehint:"Often a fixed contract figure, not gross. Leave blank to use gross.",
@@ -202,7 +202,8 @@ const I18N = {
     holidaydisplay:"Holiday pay display", breakpremium:"Break out premium portion",
     premiumhint:"On: normal + premium shown separately (premium is tax & insurance-free). Off: one flat line.",
     applycaps:"Apply salary caps", capshint:"SI/HI cap ₫46.8M · UI cap ₫106.2M.",
-    hourlyrate:"Hourly rate", regularpay:"Regular pay (taxable)",
+    hourlyrate:"Hourly rate", regularpay:"Teaching pay (taxable)",
+    rateperiod:"Rate per period", periodsmonth:"Periods this month", periodsperclass:"periods per class (tiết)", periodsunit:"tiết",
     latededuct:"Lateness deduction", holidaypremium:"Holiday premium (tax/ins-free)",
     gross:"Gross", pit:"Personal income tax", net:"Net take-home",
     viewpayslip:"View payslip", exportpdf:"Export PDF", exportexcel:"Export Excel",
@@ -243,7 +244,7 @@ const I18N = {
     back:"Về danh sách",
     name:"Họ tên", taxstatus:"Tình trạng thuế", resident:"Cư trú (lũy tiến)",
     nonresident:"Không cư trú (20%)", paidin:"Trả bằng", vnddirect:"VND trực tiếp",
-    usdrate:"Tỷ giá USD → VND", ratehour:"Đơn giá / giờ (VND)", usdhour:"USD / giờ",
+    usdrate:"Tỷ giá USD → VND", ratehour:"Đơn giá / tiết (₫)", usdhour:"USD / tiết",
     exchange:"₫ trên $1", dependents:"Người phụ thuộc", taxnumber:"Mã số thuế (MST)",
     taxnumberph:"không bắt buộc", insbase:"Lương đóng bảo hiểm",
     insbasehint:"Thường là mức cố định theo hợp đồng, không phải lương gộp. Để trống để dùng lương gộp.",
@@ -256,7 +257,8 @@ const I18N = {
     holidaydisplay:"Hiển thị lương lễ", breakpremium:"Tách phần phụ trội",
     premiumhint:"Bật: hiện phần thường + phụ trội riêng (phụ trội miễn thuế & bảo hiểm). Tắt: một dòng gộp.",
     applycaps:"Áp dụng mức trần", capshint:"BHXH/BHYT trần ₫46.8M · BHTN trần ₫106.2M.",
-    hourlyrate:"Đơn giá giờ", regularpay:"Lương thường (chịu thuế)",
+    hourlyrate:"Đơn giá giờ", regularpay:"Lương tiết dạy (chịu thuế)",
+    rateperiod:"Đơn giá tiết dạy", periodsmonth:"Số tiết dạy", periodsperclass:"số tiết mỗi lớp", periodsunit:"tiết",
     latededuct:"Khấu trừ đi muộn", holidaypremium:"Phụ trội lễ (miễn thuế/BH)",
     gross:"Tổng thu nhập", pit:"Thuế TNCN", net:"Thực lĩnh",
     viewpayslip:"Xem phiếu lương", exportpdf:"Xuất PDF", exportexcel:"Xuất Excel",
@@ -370,6 +372,7 @@ function minutesBetween(start,end){
 const pad2 = n => String(n).padStart(2,"0");
 const dKey = (y,m,d) => `${y}-${pad2(m+1)}-${pad2(d)}`;
 function monthOccurrences(tch, year, month){
+  ensureTimeRows(tch);
   const occ=[]; const days=new Date(year,month+1,0).getDate();
   const rowById = {};
   (tch.timeRows||[]).forEach(r=> rowById[r.id]=r);
@@ -383,7 +386,8 @@ function monthOccurrences(tch, year, month){
         const key=dKey(year,month,d)+"_"+slot.id;
         const ded=(tch.deductions&&tch.deductions[key])||null;
         const sched=minutesBetween(start,end);
-        occ.push({date:d,key,slot:{...slot,start,end},sched,ded,worked:Math.max(0,sched-(ded?ded.mins:0))});
+        const periods=(row && row.periods!=null) ? row.periods : Math.max(0, sched/45);
+        occ.push({date:d,key,slot:{...slot,start,end},sched,ded,periods,worked:Math.max(0,sched-(ded?ded.mins:0))});
       }
     }
   });
@@ -392,17 +396,18 @@ function monthOccurrences(tch, year, month){
 
 /* ---------- core calculation (from monthly calendar) ---------- */
 function calc(tch){
-  const vndRate = tch.cur==="usd" ? tch.rate*tch.fx : tch.rate;
-  const perMin = vndRate/60;
+  const ratePeriod = tch.cur==="usd" ? tch.rate*tch.fx : tch.rate; // rate per teaching period (tiết), in VND
   const tg = tch.toggles;
   const occ = monthOccurrences(tch, calState.year, calState.month);
 
-  let regPay=0, latePay=0, premium=0, flatHoliday=0;
+  let regPay=0, latePay=0, premium=0, flatHoliday=0, periodsWorked=0;
   occ.forEach(o=>{
     const m = o.slot.mult||1;
-    const workedBase = o.worked*perMin;
-    const fullBase = o.sched*perMin;
-    latePay += (o.ded?o.ded.mins:0)*perMin;
+    const schedPeriods = o.periods||0;
+    const workedPeriods = o.sched>0 ? schedPeriods*(o.worked/o.sched) : 0;
+    periodsWorked += workedPeriods;
+    const workedBase = workedPeriods*ratePeriod;
+    latePay += (schedPeriods-workedPeriods)*ratePeriod;
     if(m<=1){ regPay += workedBase; }
     else if(tg.split){ regPay += workedBase; premium += workedBase*(m-1); }
     else { flatHoliday += workedBase*m; }
@@ -439,7 +444,7 @@ function calc(tch){
   else { taxableIncome = Math.max(0, taxableBase - insTotal - familyDeduction); pitDue = pit(taxableIncome); }
 
   const net = gross - insTotal - pitDue;
-  return { vndRate, perMin, regPay:teachingTaxable, latePay, premium:premiumTotal, gross, otherTotal,
+  return { ratePeriod, periodsWorked, regPay:teachingTaxable, latePay, premium:premiumTotal, gross, otherTotal,
     otExempt, classPremium:premium,
     siAmt, hiAmt, uiAmt, insTotal, insSalary, familyDeduction, taxableIncome,
     pitDue, net, allowance };
@@ -589,7 +594,9 @@ function detailScreen(){
     `<select id="d-type"><option value="res" ${tch.type==="res"?"selected":""}>${t("resident")}</option><option value="non" ${tch.type==="non"?"selected":""}>${t("nonresident")}</option></select>`));
   grid.appendChild(field(t("paidin"),
     `<select id="d-cur"><option value="vnd" ${tch.cur==="vnd"?"selected":""}>${t("vnddirect")}</option><option value="usd" ${tch.cur==="usd"?"selected":""}>${t("usdrate")}</option></select>`));
-  grid.appendChild(field(tch.cur==="usd"?t("usdhour"):t("ratehour"), `<input id="d-rate" type="number" value="${tch.rate}">`));
+  const rateField = field(tch.cur==="usd"?t("usdhour"):t("ratehour"), `<input id="d-rate" type="number" value="${tch.rate}">`);
+  rateField.insertAdjacentHTML("beforeend", `<div class="hint" id="cap-rate"></div>`);
+  grid.appendChild(rateField);
   const fxField = field(t("exchange"), `<input id="d-fx" type="number" value="${tch.fx}">`);
   if(tch.cur!=="usd") fxField.classList.add("hidden");
   fxField.id="d-fxwrap";
@@ -597,9 +604,11 @@ function detailScreen(){
   grid.appendChild(field(t("dependents"), `<input id="d-deps" type="number" min="0" value="${tch.deps}">`));
   grid.appendChild(field(t("taxnumber"), `<input id="d-mst" placeholder="${t("taxnumberph")}" value="${esc(tch.mst)}">`));
   grid.appendChild(field(t("allowancename"), `<input id="d-allowname" placeholder="${t("allowancenameph")}" value="${esc(tch.allowanceName||"")}">`));
-  grid.appendChild(field(t("allowance"), `<input id="d-allow" type="number" value="${tch.allowance||0}">`));
+  const allowField = field(t("allowance"), `<input id="d-allow" type="number" value="${tch.allowance||0}">`);
+  allowField.insertAdjacentHTML("beforeend", `<div class="hint" id="cap-allow"></div>`);
+  grid.appendChild(allowField);
   const insField = field(t("insbase"), `<input id="d-insbase" type="number" value="${tch.insBase||0}">`);
-  insField.querySelector("input").insertAdjacentHTML("afterend",`<div class="hint">${t("insbasehint")}</div>`);
+  insField.querySelector("input").insertAdjacentHTML("afterend",`<div class="hint">${t("insbasehint")}</div><div class="hint" id="cap-insbase"></div>`);
   grid.appendChild(insField);
   card.appendChild(grid);
   frag.appendChild(card);
@@ -685,12 +694,26 @@ function detailScreen(){
       });
       e.addEventListener("change", ()=>{ readDetail(tch); render(); });
     });
+    refreshTopRate(tch);
   },0);
 
   return frag;
 }
 
-function refreshTopRate(){ /* placeholder for any header rate echo */ }
+function refreshTopRate(tch){
+  if(!tch) return;
+  const set=(id,txt)=>{ const e=document.getElementById(id); if(e) e.innerHTML=txt; };
+  const unit = t("periodsunit");
+  const rate=+tch.rate||0;
+  set("cap-rate", tch.cur==="usd"
+    ? `≈ ${vnd(rate*(+tch.fx||0))} / ${unit}`
+    : `= ${vnd(rate)} / ${unit}`);
+  set("cap-allow", `= ${vnd(+tch.allowance||0)}`);
+  const ins=+tch.insBase||0;
+  let insCap = ins>0 ? `= ${vnd(ins)}` : "";
+  if(ins>0 && ins<100000) insCap += `  <span style="color:var(--rose);font-weight:600;">⚠ ${lang==="vi"?"có vẻ quá nhỏ — ý bạn là hàng triệu?":"looks too small — did you mean millions?"}</span>`;
+  set("cap-insbase", insCap);
+}
 
 function toggle(key, label, val, tch){
   const row = el("label",{class:"toggle-row"});
@@ -786,6 +809,7 @@ function ensureTimeRows(tch){
     tch.timeRows = Object.values(map).sort((a,b)=> a.start.localeCompare(b.start));
     if(!tch.timeRows.length) tch.timeRows = [{id:"r0",start:"18:00",end:"19:30"}];
   }
+  tch.timeRows.forEach(r=>{ if(r.periods==null) r.periods = Math.max(1, Math.round(minutesBetween(r.start,r.end)/45)); });
   return tch.timeRows;
 }
 function renderWeeklyRows(wrap, tch){
@@ -801,7 +825,7 @@ function renderWeeklyRows(wrap, tch){
 
   rows.forEach((r)=>{
     const timeCell = el("div",{class:"tt-time-cell"});
-    timeCell.innerHTML = `<input type="time" value="${r.start}" data-rowid="${r.id}" data-tf="start"><span class="tt-dash">–</span><input type="time" value="${r.end}" data-rowid="${r.id}" data-tf="end"><button class="tt-delrow iconbtn" data-delrow="${r.id}" title="remove row">${icon.x}</button>`;
+    timeCell.innerHTML = `<input type="time" value="${r.start}" data-rowid="${r.id}" data-tf="start"><span class="tt-dash">–</span><input type="time" value="${r.end}" data-rowid="${r.id}" data-tf="end"><input type="number" min="0" step="0.5" class="tt-periods" value="${r.periods!=null?r.periods:1}" data-rowid="${r.id}" data-periods title="${t('periodsperclass')}" style="width:52px;margin-left:6px;"><span class="tt-dash" style="font-size:11px;">${t('periodsunit')}</span><button class="tt-delrow iconbtn" data-delrow="${r.id}" title="remove row">${icon.x}</button>`;
     grid.appendChild(timeCell);
     DOWSEL.forEach(dow=>{
       const slot = tch.weekly.find(s=> s.rowId===r.id && s.dow===dow);
@@ -825,6 +849,15 @@ function renderWeeklyRows(wrap, tch){
     inp.addEventListener("change", ()=>{
       const rid=inp.dataset.rowid, f=inp.dataset.tf;
       const row = tch.timeRows.find(r=>r.id===rid); if(row) row[f]=inp.value;
+      renderBreakdown(document.getElementById("breakdown"), tch);
+      renderCalendar(document.getElementById("calwrap"), tch);
+    });
+  });
+  // edit a row's periods (tiết)
+  wrap.querySelectorAll("input[data-periods]").forEach(inp=>{
+    inp.addEventListener("change", ()=>{
+      const row = tch.timeRows.find(r=>r.id===inp.dataset.rowid);
+      if(row) row.periods = Math.max(0, +inp.value||0);
       renderBreakdown(document.getElementById("breakdown"), tch);
       renderCalendar(document.getElementById("calwrap"), tch);
     });
@@ -955,7 +988,8 @@ function readDetail(tch){
 function renderBreakdown(box, tch){
   const r = calc(tch);
   const rows = [];
-  rows.push(["lab", t("hourlyrate"), vnd(r.vndRate)]);
+  rows.push(["lab", t("rateperiod"), vnd(r.ratePeriod)]);
+  rows.push(["lab", t("periodsmonth"), (Math.round(r.periodsWorked*100)/100).toString()]);
   rows.push(["lab", t("regularpay"), vnd(r.regPay)]);
   if(r.allowance>0) rows.push(["lab", (tch.allowanceName||t("allowance")), vnd(r.allowance)]);
   (tch.otherIncome||[]).forEach(o=>{ const amt=(+o.rate||0)*(+o.hours||0); if(amt>0) rows.push(["lab", o.name||t("otherincome"), vnd(amt)]); });
@@ -1021,6 +1055,8 @@ function buildSlipHTML(tch, forPrint){
       <div class="meta-item"><span class="k">${L.name}: </span><span class="v">${tch.name}</span></div>
       <div class="meta-item"><span class="k">${L.position}: </span><span class="v">${L.position_val}</span></div>
       ${mst}
+      <div class="meta-item"><span class="k">${L.rateperiod}: </span><span class="v">${vnd(r.ratePeriod)}</span></div>
+      <div class="meta-item"><span class="k">${L.periodsmonth}: </span><span class="v">${Math.round(r.periodsWorked*100)/100}</span></div>
       <div class="meta-item"><span class="k">${L.insbaseLabel}: </span><span class="v">${vnd(r.insSalary)}</span></div>
       <div class="meta-item"><span class="k">${L.deduction}: </span><span class="v">${vnd(r.familyDeduction)}</span></div>
       <div class="meta-item"><span class="k">${L.taxableincome}: </span><span class="v">${vnd(r.taxableIncome)}</span></div>
