@@ -1233,8 +1233,82 @@ function maybeWarn(daysLeft){
   document.body.appendChild(bar);
 }
 
+/* ===== DEMO MODE =====
+   Triggered by ?demo=1 (or #demo). Fully sandboxed:
+   - skips the licence gate
+   - loads pristine sample data (NOT the centre's real data)
+   - leaves CRYPTO_KEY null, so saveData() no-ops → nothing is ever written,
+     real encrypted data is never read or touched
+   Safe to click anything in front of a client. */
+const DEMO = (new URLSearchParams(location.search).get("demo")==="1") || location.hash==="#demo";
+function demoSeed(){
+  return JSON.parse(JSON.stringify({
+    center:{ name:"Trung tâm Anh ngữ Bình Minh", addr:"12 Lê Lợi, Quận 1, TP. Hồ Chí Minh", tax:"0312345678", logo:null },
+    teachers:[
+      { id:1, name:"Trần Thị Mai Linh", empId:"GV01", type:"res", cur:"vnd", rate:320000, fx:25000,
+        deps:2, mst:"8312345678", insBase:12000000, allowance:2000000, allowanceName:"Phụ cấp kiêm nhiệm",
+        otherIncome:[], overtime:[{name:"Luyện thi cuối tuần / Weekend exam prep", rate:450000, hours:8}],
+        weekly:[
+          {id:"s1",label:"IELTS Writing",dow:1,start:"18:00",end:"20:00",mult:1},
+          {id:"s2",label:"IELTS Writing",dow:3,start:"18:00",end:"20:00",mult:1},
+          {id:"s3",label:"General English",dow:5,start:"17:30",end:"19:30",mult:1},
+          {id:"s4",label:"Speaking club",dow:6,start:"09:00",end:"11:00",mult:1},
+        ],
+        deductions:{ "2026-06-08_s1":{mins:15,note:"Đến muộn / Arrived late"}, "2026-06-12_s3":{mins:30,note:"Về sớm / Left early"} },
+        toggles:{si:true,hi:true,ui:true,split:true,cap:true} },
+      { id:2, name:"Michael James Carter", empId:"GV02", type:"non", cur:"usd", rate:22, fx:25400,
+        deps:0, mst:"", insBase:0, allowance:5000000, allowanceName:"Housing allowance",
+        otherIncome:[{name:"Kiểm tra đầu vào / Placement testing", rate:600000, hours:4}],
+        overtime:[{name:"Saturday workshop", rate:33, hours:5}],
+        weekly:[
+          {id:"s1",label:"Business English",dow:2,start:"18:00",end:"20:00",mult:1},
+          {id:"s2",label:"Business English",dow:4,start:"18:00",end:"20:00",mult:1},
+          {id:"s3",label:"IELTS Speaking",dow:6,start:"14:00",end:"16:00",mult:1},
+        ],
+        deductions:{},
+        toggles:{si:false,hi:false,ui:false,split:true,cap:true} },
+      { id:3, name:"Phạm Quốc Anh", empId:"GV03", type:"res", cur:"vnd", rate:280000, fx:25000,
+        deps:0, mst:"8298765432", insBase:8000000, allowance:0, allowanceName:"",
+        otherIncome:[], overtime:[],
+        weekly:[
+          {id:"s1",label:"Kids English",dow:2,start:"17:00",end:"18:30",mult:1},
+          {id:"s2",label:"Kids English",dow:4,start:"17:00",end:"18:30",mult:1},
+        ],
+        deductions:{},
+        toggles:{si:true,hi:true,ui:true,split:true,cap:true} },
+    ],
+    nextId:4
+  }));
+}
+function startDemo(){
+  const seed = demoSeed();
+  center = seed.center; teachers = seed.teachers; nextId = seed.nextId;
+  CRYPTO_KEY = null;                 // ← keeps every save a no-op; real data never touched
+  calState = { year:2026, month:5 }; // June 2026, so the sample deductions show
+  view = { screen:"roster", teacherId:null };
+  render();
+  injectDemoBadge();
+}
+function injectDemoBadge(){
+  const old = document.getElementById("demo-badge"); if(old) old.remove();
+  const b = document.createElement("div");
+  b.id = "demo-badge";
+  b.style.cssText = "position:fixed;left:14px;bottom:14px;z-index:70;display:flex;align-items:center;gap:8px;"
+    + "background:var(--gold);color:#fff;border-radius:999px;padding:7px 8px 7px 14px;"
+    + "box-shadow:0 6px 20px rgba(20,32,42,.22);font-size:12.5px;font-weight:700;letter-spacing:.04em;";
+  b.innerHTML = '<span>DEMO</span>'
+    + '<button id="demo-reset" title="Reset sample data" style="background:rgba(255,255,255,.22);border:none;color:#fff;'
+    + 'border-radius:999px;padding:5px 11px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;">↺ Reset</button>'
+    + '<button id="demo-exit" title="Leave demo" style="background:rgba(255,255,255,.22);border:none;color:#fff;'
+    + 'border-radius:999px;padding:5px 11px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;">Exit</button>';
+  document.body.appendChild(b);
+  document.getElementById("demo-reset").onclick = ()=> startDemo();
+  document.getElementById("demo-exit").onclick  = ()=> { location.href = location.pathname; };
+}
+
 /* ---------- boot ---------- */
 (async function boot(){
+  if(DEMO){ startDemo(); return; }
   const stored = localStorage.getItem(LS_KEY);
   if(stored){
     try{
