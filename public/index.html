@@ -185,20 +185,6 @@
   .modal{background:var(--paper);border-radius:var(--radius);box-shadow:0 20px 60px rgba(0,0,0,.25);width:100%;max-width:440px;padding:20px;max-height:85vh;overflow:auto;}
   .modal-head{margin-bottom:14px;}
   .day-item{padding:14px;border:1px solid var(--line-soft);border-radius:11px;margin-bottom:12px;}
-  .mainnav{display:flex;gap:6px;margin-bottom:16px;}
-  .mainnav button{border:1px solid var(--line);background:var(--paper);color:var(--ink-soft);font-family:inherit;font-weight:600;font-size:13.5px;padding:8px 16px;border-radius:10px;cursor:pointer;}
-  .mainnav button.on{background:var(--teal);color:#fff;border-color:var(--teal);}
-  .att-dow{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:6px;}
-  .att-dow span{text-align:center;font-size:11px;color:var(--ink-soft);}
-  .att-cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
-  .att-d{aspect-ratio:1;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:14px;font-weight:600;border:1px solid #eef3f0;color:#b6c2bc;}
-  .att-d.cls{cursor:pointer;background:#f4f8f6;color:var(--ink);}
-  .att-d.present{background:#2e9e5b;color:#fff;border-color:#2e9e5b;}
-  .att-d.absent{background:#c0392b;color:#fff;border-color:#c0392b;}
-  .att-d small{font-size:9px;line-height:1;}
-  .att-legend{display:flex;gap:16px;margin-top:12px;font-size:12px;color:var(--ink-soft);}
-  .att-legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px;}
-  .att-sum{background:#e4f2ef;border:1px solid var(--teal);border-radius:12px;padding:12px 15px;display:flex;justify-content:space-between;margin-top:14px;color:#0a5b53;font-weight:600;}
 </style>
 </head>
 <body>
@@ -210,7 +196,7 @@
 const I18N = {
   en:{
     appsub:"Galo · Teacher payroll",
-    payrolltab:"Payroll", classroomtab:"Classroom", classes:"Classes", students:"Students", addclassbtn:"Add class", addstudent:"Add student", present:"Present", absent:"Absent", noclass:"No class", newclassname:"Class name (e.g. IELTS Mon/Wed)", classdays:"Class days (1=Mon…7=Sun, e.g. 1,3)", newstudentname:"Student name",
+    bonus:"Bonus / KPI", advance:"Salary advance (tạm ứng)", union:"Trade-union fee — 1%", employercost:"Employer total cost", extras:"Extra pay & deductions", addphoto:"Add photo", centeremail:"Email (for invoice)",
     teachers:"Teachers", monthlytotal:"Monthly total", addteacher:"Add teacher",
     who:"Who they are", howpaid:"How they're paid", howpaidhint:"Rate per hour × hours from the schedule.", taxdeps:"Tax & dependents", allowins:"Allowance & insurance", psum_hours:"Hours",
     centersetup:"Center setup", setup:"Setup",
@@ -267,7 +253,7 @@ const I18N = {
   },
   vi:{
     appsub:"Galo · Lương phi mã",
-    payrolltab:"Lương", classroomtab:"Lớp học", classes:"Lớp học", students:"Học sinh", addclassbtn:"Thêm lớp", addstudent:"Thêm học sinh", present:"Có mặt", absent:"Vắng", noclass:"Không học", newclassname:"Tên lớp (vd: IELTS T2/T4)", classdays:"Ngày học (1=T2…7=CN, vd 1,3)", newstudentname:"Tên học sinh",
+    bonus:"Thưởng / KPI", advance:"Tạm ứng lương", union:"Phí công đoàn — 1%", employercost:"Tổng chi phí chủ sử dụng", extras:"Thu nhập thêm & khấu trừ", addphoto:"Thêm ảnh", centeremail:"Email (cho hoá đơn)",
     teachers:"Giáo viên", monthlytotal:"Tổng tháng", addteacher:"Thêm giáo viên",
     who:"Thông tin giáo viên", howpaid:"Cách trả lương", howpaidhint:"Đơn giá giờ × số giờ theo lịch dạy.", taxdeps:"Thuế & người phụ thuộc", allowins:"Phụ cấp & bảo hiểm", psum_hours:"Số giờ",
     centersetup:"Thiết lập trung tâm", setup:"Thiết lập",
@@ -335,7 +321,7 @@ const RATES = {
 };
 
 /* ---------- state ---------- */
-let center = { name:"Greenfield Language Centre", addr:"", tax:"", logo:null };
+let center = { name:"Greenfield Language Centre", addr:"", tax:"", email:"", logo:null };
 let teachers = [
   { id:1, name:"Nguyễn Thu Hà", empId:"NQ01", type:"res", cur:"vnd", rate:300000, fx:25000,
     deps:1, mst:"", insBase:6000000, allowance:3000000, allowanceName:"Phụ cấp kiêm nhiệm",
@@ -358,12 +344,6 @@ let teachers = [
     toggles:{si:true,hi:true,ui:false,split:true,cap:true} },
 ];
 let nextId = 3;
-let classes = [
-  { id:1, name:"IELTS 6.5 · Mon/Wed", dows:[1,3],
-    students:[{id:1,name:"Nguyễn Hải"},{id:2,name:"Trần Lan"},{id:3,name:"Phạm Đức"}],
-    attend:{} },
-];
-let nextClassId = 2;
 let view = { screen:"roster", teacherId:null };
 
 /* ---------- helpers ---------- */
@@ -450,6 +430,8 @@ function calc(tch){
 
   const teachingTaxable = regPay + flatHoliday;
   const allowance = +tch.allowance||0;
+  const bonus = +tch.bonus||0;
+  const advance = +tch.advance||0;
   const otherTotal = (tch.otherIncome||[]).reduce((a,o)=>a+((+o.rate||0)*(+o.hours||0)),0);
 
   // overtime: under Law 109/2025 all lawful overtime pay is fully PIT-exempt
@@ -464,7 +446,7 @@ function calc(tch){
   const allowanceExempt = !!tch.allowanceExempt;
   const allowanceTaxable = allowanceExempt ? 0 : allowance;
   const allowanceExemptAmt = allowanceExempt ? allowance : 0;
-  const taxableBase = teachingTaxable + allowanceTaxable + otherTotal;
+  const taxableBase = teachingTaxable + allowanceTaxable + otherTotal + bonus;
   const premiumTotal = premium;
   const gross = taxableBase + premiumTotal + otExempt + allowanceExemptAmt;
 
@@ -476,6 +458,11 @@ function calc(tch){
   const hiAmt = (!casual && tg.hi) ? siBase*RATES.hi : 0;
   const uiAmt = (!casual && tg.ui) ? uiBase*RATES.ui : 0;
   const insTotal = siAmt+hiAmt+uiAmt;
+  const unionAmt = (!casual && tg.union) ? siBase*0.01 : 0;
+  const erSI = (!casual && tg.si) ? siBase*0.175 : 0;
+  const erHI = (!casual && tg.hi) ? siBase*0.03 : 0;
+  const erUI = (!casual && tg.ui) ? uiBase*0.01 : 0;
+  const employerIns = erSI+erHI+erUI;
 
   const familyDeduction = RATES.personal + tch.deps*RATES.dependent;
   let taxableIncome, pitDue;
@@ -483,11 +470,11 @@ function calc(tch){
   else if(casual){ taxableIncome = taxableBase; pitDue = taxableBase*0.10; } // service contract: 10% withholding
   else { taxableIncome = Math.max(0, taxableBase - insTotal - familyDeduction); pitDue = pit(taxableIncome); }
 
-  const net = gross - insTotal - pitDue;
+  const net = gross - insTotal - pitDue - advance - unionAmt;
   return { ratePerHour, hoursWorked, regPay:teachingTaxable, latePay, premium:premiumTotal, gross, otherTotal,
     otExempt, classPremium:premium,
     siAmt, hiAmt, uiAmt, insTotal, insSalary, familyDeduction, taxableIncome,
-    pitDue, net, allowance };
+    pitDue, net, allowance, bonus, advance, unionAmt, employerIns, employerCost: gross+employerIns };
 }
 
 /* ---------- render dispatch ---------- */
@@ -495,13 +482,10 @@ function render(){
   const app = document.getElementById("app");
   app.innerHTML = "";
   app.appendChild(topbar());
-  if(view.screen==="roster"){ app.appendChild(navbar("pay")); app.appendChild(rosterScreen()); }
-  else if(view.screen==="classroom"){ app.appendChild(navbar("class")); app.appendChild(classroomScreen()); }
+  if(view.screen==="roster") app.appendChild(rosterScreen());
   else if(view.screen==="setup") app.appendChild(setupScreen());
   else if(view.screen==="detail") app.appendChild(detailScreen());
   else if(view.screen==="payslip") app.appendChild(payslipScreen());
-  else if(view.screen==="classroster") app.appendChild(classRosterScreen());
-  else if(view.screen==="attend") app.appendChild(attendScreen());
 }
 
 function topbar(){
@@ -544,7 +528,7 @@ function rosterScreen(){
     const expat = !tc.toggles.ui;
     const badge = tc.type==="non" ? `<span class="pill pill-gold">20%</span>` : (tc.type==="casual" ? `<span class="pill pill-gold">10%</span>` : (expat?`<span class="pill pill-teal">expat</span>`:""));
     const rateTxt = tc.cur==="usd" ? `$${tc.rate}/h` : vnd(tc.rate)+"/h";
-    row.innerHTML = `<div class="tav">${init}</div>
+    row.innerHTML = `<div class="tav">${tc.photo?`<img src="${tc.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">`:init}</div>
       <div style="flex:1;min-width:0;"><div style="font-weight:600;font-size:14px;">${tc.name} ${badge}</div>
       <div class="muted">${tc.empId||""} · ${rateTxt}</div></div>
       <div style="font-weight:700;color:var(--teal);font-variant-numeric:tabular-nums;">${vnd(r.net)}</div>
@@ -584,7 +568,8 @@ function setupScreen(){
   const f1 = field(t("centername"), `<input id="su-name" value="${esc(center.name)}">`);
   const f2 = field(t("centeraddr"), `<input id="su-addr" value="${esc(center.addr)}">`);
   const f3 = field(t("centertax"), `<input id="su-tax" value="${esc(center.tax)}">`);
-  grid.appendChild(f1); grid.appendChild(f2); grid.appendChild(f3);
+  const f4 = field(t("centeremail"), `<input id="su-email" value="${esc(center.email||"")}">`);
+  grid.appendChild(f1); grid.appendChild(f2); grid.appendChild(f3); grid.appendChild(f4);
 
   const logoWrap = el("div",{});
   logoWrap.innerHTML = `<label class="fl">Logo</label>`;
@@ -608,6 +593,7 @@ function setupScreen(){
     center.name = document.getElementById("su-name").value;
     center.addr = document.getElementById("su-addr").value;
     center.tax  = document.getElementById("su-tax").value;
+    center.email = document.getElementById("su-email").value;
     view.screen="roster"; render();
   };
   card.appendChild(save);
@@ -615,6 +601,21 @@ function setupScreen(){
   return frag;
 }
 
+function shrinkImage(file, max, cb){
+  const r=new FileReader(); r.onload=()=>{ const img=new Image(); img.onload=()=>{ let w=img.width,h=img.height; const sc=Math.min(1,max/Math.max(w,h)); const c=document.createElement("canvas"); c.width=Math.round(w*sc); c.height=Math.round(h*sc); c.getContext("2d").drawImage(img,0,0,c.width,c.height); cb(c.toDataURL("image/jpeg",0.82)); }; img.src=r.result; }; r.readAsDataURL(file);
+}
+function photoField(tch){
+  const wrap = el("div",{style:"grid-column:1 / -1;display:flex;align-items:center;gap:14px;margin-bottom:2px;"});
+  const prev = el("div",{style:"width:56px;height:56px;border-radius:12px;background:#e4f2ef;color:#0a5b53;display:flex;align-items:center;justify-content:center;font-weight:600;overflow:hidden;flex-shrink:0;"});
+  prev.innerHTML = tch.photo?`<img src="${tch.photo}" style="width:100%;height:100%;object-fit:cover;">`:esc((tch.name||"?").trim()[0]||"?");
+  const btn = el("label",{class:"btn btn-ghost",style:"height:36px;cursor:pointer;"}, t("addphoto"));
+  const inp = el("input",{type:"file",accept:"image/*",style:"display:none;"});
+  inp.onchange = ()=>{ const f=inp.files[0]; if(!f) return; shrinkImage(f,256,(url)=>{ readDetail(tch); tch.photo=url; render(); }); };
+  btn.appendChild(inp);
+  wrap.appendChild(prev); wrap.appendChild(btn);
+  if(tch.photo){ const rm=el("button",{class:"btn btn-ghost",style:"height:36px;"}, "✕"); rm.onclick=()=>{ readDetail(tch); tch.photo=null; render(); }; wrap.appendChild(rm); }
+  return wrap;
+}
 function field(label, inner){
   const d = el("div",{}); d.innerHTML = `<label class="fl">${label}</label>${inner}`; return d;
 }
@@ -652,6 +653,7 @@ function detailScreen(){
   const card = el("div",{class:"card card-pad"});
   const grid = el("div",{class:"grid cols2"});
   grid.appendChild(subhead(SUB_ICONS.who, t("who")));
+  grid.appendChild(photoField(tch));
   grid.appendChild(field(t("name"), `<input id="d-name" value="${esc(tch.name)}">`));
   grid.appendChild(field(t("employeeid"), `<input id="d-empid" value="${esc(tch.empId)}">`));
   grid.appendChild(field(t("taxstatus"),
@@ -704,6 +706,16 @@ function detailScreen(){
   otCard.appendChild(addOt);
   frag.appendChild(otCard);
 
+  // extra pay & deductions
+  const exTitle = el("div",{class:"section-title"}, t("extras"));
+  frag.appendChild(exTitle);
+  const exCard = el("div",{class:"card card-pad"});
+  const exGrid = el("div",{class:"grid cols2"});
+  exGrid.appendChild(field(t("bonus"), `<input id="d-bonus" type="number" min="0" value="${tch.bonus||0}">`));
+  exGrid.appendChild(field(t("advance"), `<input id="d-advance" type="number" min="0" value="${tch.advance||0}">`));
+  exCard.appendChild(exGrid);
+  frag.appendChild(exCard);
+
   // weekly schedule builder
   const st = el("div",{class:"section-title"}, `${t("weeklysched")} <span class="muted">— ${t("weeklyhint")}</span>`);
   frag.appendChild(st);
@@ -727,6 +739,7 @@ function detailScreen(){
   cc.appendChild(toggle("si", t("si"), tch.toggles.si, tch));
   cc.appendChild(toggle("hi", t("hi"), tch.toggles.hi, tch));
   cc.appendChild(toggle("ui", t("ui"), tch.toggles.ui, tch));
+  cc.appendChild(toggle("union", t("union"), !!tch.toggles.union, tch));
   cc.insertAdjacentHTML("beforeend", `<div class="hint">${t("uihint")}</div>`);
   opts.appendChild(cc);
 
@@ -753,7 +766,7 @@ function detailScreen(){
 
   // wire live inputs
   setTimeout(()=>{
-    ["d-name","d-empid","d-type","d-cur","d-rate","d-fx","d-deps","d-mst","d-allow","d-allowexempt","d-allowname","d-insbase"].forEach(id=>{
+    ["d-name","d-empid","d-type","d-cur","d-rate","d-fx","d-deps","d-mst","d-allow","d-allowexempt","d-allowname","d-insbase","d-bonus","d-advance"].forEach(id=>{
       const e=document.getElementById(id); if(!e) return;
       e.addEventListener("input", ()=>{ readDetail(tch);
         if(id==="d-cur"){ render(); }
@@ -1044,6 +1057,8 @@ function readDetail(tch){
   tch.rate=+g("d-rate").value||0; if(g("d-fx")) tch.fx=+g("d-fx").value||0;
   tch.deps=Math.max(0,+g("d-deps").value||0); tch.mst=g("d-mst").value;
   tch.allowance=+g("d-allow").value||0; tch.insBase=+g("d-insbase").value||0;
+  if(g("d-bonus")) tch.bonus=+g("d-bonus").value||0;
+  if(g("d-advance")) tch.advance=+g("d-advance").value||0;
   if(g("d-allowexempt")) tch.allowanceExempt=g("d-allowexempt").checked;
   if(g("d-allowname")) tch.allowanceName=g("d-allowname").value;
 }
@@ -1056,6 +1071,7 @@ function renderBreakdown(box, tch){
   rows.push(["lab", t("periodsmonth"), (Math.round(r.hoursWorked*100)/100).toString()]);
   rows.push(["lab", t("regularpay"), vnd(r.regPay)]);
   if(r.allowance>0) rows.push(["lab", (tch.allowanceName||t("allowance")), vnd(r.allowance)]);
+  if(r.bonus>0) rows.push(["pos", t("bonus"), vnd(r.bonus)]);
   (tch.otherIncome||[]).forEach(o=>{ const amt=(+o.rate||0)*(+o.hours||0); if(amt>0) rows.push(["lab", o.name||t("otherincome"), vnd(amt)]); });
   if(r.otExempt>0) rows.push(["pos", t("overtimeexempt"), vnd(r.otExempt)]);
   if(r.latePay>0) rows.push(["neg", t("latededuct"), "−"+vnd(r.latePay)]);
@@ -1070,8 +1086,11 @@ function renderBreakdown(box, tch){
   if(tch.toggles.hi) mid += `<div class="bd-row neg"><span class="lab">− ${t("hi")}</span><span class="val">−${vnd(r.hiAmt)}</span></div>`;
   if(tch.toggles.ui) mid += `<div class="bd-row neg"><span class="lab">− ${t("ui")}</span><span class="val">−${vnd(r.uiAmt)}</span></div>`;
   mid += `<div class="bd-row neg"><span class="lab">− ${t("pit")}</span><span class="val">−${vnd(r.pitDue)}</span></div>`;
+  if(r.unionAmt>0) mid += `<div class="bd-row neg"><span class="lab">− ${t("union")}</span><span class="val">−${vnd(r.unionAmt)}</span></div>`;
+  if(r.advance>0) mid += `<div class="bd-row neg"><span class="lab">− ${t("advance")}</span><span class="val">−${vnd(r.advance)}</span></div>`;
   const net = `<div class="bd-total"><span class="lab">${t("net")}</span><span class="val">${vnd(r.net)}</span></div>`;
-  box.innerHTML = pre + html + mid + net;
+  const erRow = r.employerIns>0 ? `<div class="bd-row" style="margin-top:8px;color:var(--ink-soft);"><span class="lab">${t("employercost")}</span><span class="val">${vnd(r.employerCost)}</span></div>` : "";
+  box.innerHTML = pre + html + mid + net + erRow;
 }
 
 /* ---------- payslip ---------- */
@@ -1259,124 +1278,10 @@ async function decryptData(str){
     return JSON.parse(new TextDecoder().decode(dec));
   }catch(e){ return null; }
 }
-/* ===== Classroom · student attendance (on-device, no server) ===== */
-function navbar(active){
-  const nav = el("div",{class:"mainnav"});
-  const p = el("button",{class: active==="pay"?"on":""}, t("payrolltab"));
-  p.onclick = ()=>{ view.screen="roster"; render(); };
-  const c = el("button",{class: active==="class"?"on":""}, t("classroomtab"));
-  c.onclick = ()=>{ view.screen="classroom"; render(); };
-  nav.appendChild(p); nav.appendChild(c);
-  return nav;
-}
-function clsById(id){ return classes.find(c=>c.id===id); }
-function attPad(n){ return (n<10?"0":"")+n; }
-function attKey(sid,y,m,d){ return sid+"|"+y+"-"+attPad(m+1)+"-"+attPad(d); }
-function studentPct(cl, sid){
-  let p=0,a=0; const pre=sid+"|";
-  for(const k in cl.attend){ if(k.indexOf(pre)===0){ if(cl.attend[k]==="present")p++; else if(cl.attend[k]==="absent")a++; } }
-  const tot=p+a; return {p,a,pct: tot? Math.round(p/tot*100):null};
-}
-function row3(avatar, title, sub, right, circle){
-  const r = el("div",{style:"display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid #eef3f0;cursor:pointer;"});
-  r.innerHTML = `<div style="width:38px;height:38px;border-radius:${circle?'50%':'10px'};background:#e4f2ef;color:#0a5b53;display:flex;align-items:center;justify-content:center;font-weight:600;">${esc(avatar)}</div>`
-    + `<div style="flex:1;min-width:0;"><div style="font-weight:600;">${esc(title)}</div><div class="muted" style="font-size:12px;">${sub}</div></div>`
-    + `<div style="display:flex;align-items:center;gap:9px;">${right||""}<span style="color:#8a978f;">›</span></div>`;
-  return r;
-}
-function classroomScreen(){
-  const frag = document.createDocumentFragment();
-  const card = el("div",{class:"card"});
-  card.innerHTML = `<div class="eyebrow">${t("classroomtab")}</div><div class="muted" style="margin-bottom:4px;">${classes.length} ${t("classes").toLowerCase()}</div>`;
-  classes.forEach(cl=>{
-    const r = row3((cl.name||"?").trim()[0], cl.name, cl.students.length+" "+t("students").toLowerCase());
-    r.onclick = ()=>{ view.screen="classroster"; view.classId=cl.id; render(); };
-    card.appendChild(r);
-  });
-  frag.appendChild(card);
-  const add = el("button",{class:"btn btn-primary",style:"margin-top:14px;"}, "+ "+t("addclassbtn"));
-  add.onclick = ()=>{
-    const name = prompt(t("newclassname")); if(!name) return;
-    const days = prompt(t("classdays"),"1,3")||"";
-    const dows = days.split(",").map(s=>parseInt(s.trim())).filter(n=>n>=1&&n<=7);
-    const nc = {id:nextClassId++, name:name.trim(), dows, students:[], attend:{}};
-    classes.push(nc); view.screen="classroster"; view.classId=nc.id; render();
-  };
-  frag.appendChild(add);
-  return frag;
-}
-function classRosterScreen(){
-  const cl = clsById(view.classId);
-  const frag = document.createDocumentFragment();
-  if(!cl){ view.screen="classroom"; return frag; }
-  const back = el("button",{class:"btn btn-ghost",style:"margin-bottom:14px;"}, "‹ "+t("classes"));
-  back.onclick = ()=>{ view.screen="classroom"; render(); };
-  frag.appendChild(back);
-  const card = el("div",{class:"card"});
-  card.innerHTML = `<div class="eyebrow">${esc(cl.name)}</div><div class="muted" style="margin-bottom:4px;">${cl.students.length} ${t("students").toLowerCase()}</div>`;
-  cl.students.forEach(st=>{
-    const s = studentPct(cl, st.id);
-    const badge = s.pct===null ? "" : `<span style="font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px;background:${s.pct>=80?'#e3f3e9':'#faeceb'};color:${s.pct>=80?'#2e9e5b':'#c0392b'};">${s.pct}%</span>`;
-    const r = row3(st.name.trim()[0], st.name, s.p+" "+t("present").toLowerCase()+" · "+s.a+" "+t("absent").toLowerCase(), badge, true);
-    r.onclick = ()=>{ view.screen="attend"; view.studentId=st.id; const n=new Date(); view.attY=n.getFullYear(); view.attM=n.getMonth(); render(); };
-    card.appendChild(r);
-  });
-  frag.appendChild(card);
-  const add = el("button",{class:"btn btn-primary",style:"margin-top:14px;"}, "+ "+t("addstudent"));
-  add.onclick = ()=>{ const name=prompt(t("newstudentname")); if(!name) return; const sid=cl.students.reduce((m,s)=>Math.max(m,s.id),0)+1; cl.students.push({id:sid,name:name.trim()}); render(); };
-  frag.appendChild(add);
-  return frag;
-}
-function attendScreen(){
-  const cl = clsById(view.classId);
-  const frag = document.createDocumentFragment();
-  if(!cl){ view.screen="classroom"; return frag; }
-  const st = cl.students.find(s=>s.id===view.studentId);
-  if(!st){ view.screen="classroster"; return frag; }
-  const y=view.attY, m=view.attM;
-  const back = el("button",{class:"btn btn-ghost",style:"margin-bottom:14px;"}, "‹ "+esc(cl.name));
-  back.onclick = ()=>{ view.screen="classroster"; render(); };
-  frag.appendChild(back);
-  const card = el("div",{class:"card card-pad"});
-  const hd = el("div",{style:"display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:10px;"});
-  const prevB = el("button",{class:"iconbtn"},"‹"); prevB.onclick=()=>{ view.attM--; if(view.attM<0){view.attM=11;view.attY--;} render(); };
-  const nextB = el("button",{class:"iconbtn"},"›"); nextB.onclick=()=>{ view.attM++; if(view.attM>11){view.attM=0;view.attY++;} render(); };
-  const mlabel = lang==="vi" ? ("Tháng "+(m+1)) : new Date(y,m,1).toLocaleString("en",{month:"long"});
-  const title = el("div",{style:"font-weight:600;text-align:center;flex:1;"}, esc(st.name)+" · "+mlabel+" "+y);
-  hd.appendChild(prevB); hd.appendChild(title); hd.appendChild(nextB); card.appendChild(hd);
-  const dow = el("div",{class:"att-dow"}); ["T2","T3","T4","T5","T6","T7","CN"].forEach(d=>dow.appendChild(el("span",{},d))); card.appendChild(dow);
-  const grid = el("div",{class:"att-cal"});
-  const firstDow = (new Date(y,m,1).getDay()+6)%7;
-  const daysIn = new Date(y,m+1,0).getDate();
-  for(let i=0;i<firstDow;i++) grid.appendChild(el("div",{}));
-  let pC=0,aC=0;
-  for(let d=1;d<=daysIn;d++){
-    const dowN = ((new Date(y,m,d).getDay())+6)%7+1;
-    const isClass = cl.dows.includes(dowN);
-    const key = attKey(st.id,y,m,d);
-    const stt = cl.attend[key];
-    if(stt==="present")pC++; if(stt==="absent")aC++;
-    const cell = el("div",{class:"att-d"+(isClass?" cls":"")+(stt?" "+stt:"")});
-    cell.innerHTML = d + (stt==="present"?'<small>✓</small>':stt==="absent"?'<small>✕</small>':'');
-    if(isClass){ cell.onclick = ()=>{ const cur=cl.attend[key]; if(!cur) cl.attend[key]="present"; else if(cur==="present") cl.attend[key]="absent"; else delete cl.attend[key]; render(); }; }
-    grid.appendChild(cell);
-  }
-  card.appendChild(grid);
-  const legend = el("div",{class:"att-legend"});
-  legend.innerHTML = `<span><i style="background:#2e9e5b"></i>${t("present")}</span><span><i style="background:#c0392b"></i>${t("absent")}</span><span><i style="background:#eef3f0"></i>${t("noclass")}</span>`;
-  card.appendChild(legend);
-  const tot=pC+aC;
-  const sum = el("div",{class:"att-sum"});
-  sum.innerHTML = `<span>${pC} ${t("present").toLowerCase()} · ${aC} ${t("absent").toLowerCase()}</span><span>${tot?Math.round(pC/tot*100):0}%</span>`;
-  card.appendChild(sum);
-  frag.appendChild(card);
-  return frag;
-}
-
 async function saveData(){
   if(!CRYPTO_KEY) return;
   try{
-    const payload = { center, teachers, nextId, classes, nextClassId };
+    const payload = { center, teachers, nextId };
     localStorage.setItem(LS_DATA, await encryptData(payload));
   }catch(e){ console.warn("save failed", e); }
 }
@@ -1384,7 +1289,7 @@ async function loadData(){
   const raw = localStorage.getItem(LS_DATA);
   if(!raw) return false;
   const obj = await decryptData(raw);
-  if(obj && obj.teachers){ center = obj.center||center; teachers = obj.teachers; nextId = obj.nextId||teachers.length+1; if(obj.classes){ classes = obj.classes; nextClassId = obj.nextClassId || (classes.reduce((m,c)=>Math.max(m,c.id),0)+1); } return true; }
+  if(obj && obj.teachers){ center = obj.center||center; teachers = obj.teachers; nextId = obj.nextId||teachers.length+1; return true; }
   return false;
 }
 /* autosave: wrap render so every change persists */
@@ -1460,7 +1365,7 @@ function demoSeed(){
     center:{ name:"Trung tâm Anh ngữ Bình Minh", addr:"12 Lê Lợi, Quận 1, TP. Hồ Chí Minh", tax:"0312345678", logo:null },
     teachers:[
       { id:1, name:"Trần Thị Mai Linh", empId:"GV01", type:"res", cur:"vnd", rate:320000, fx:25000,
-        deps:2, mst:"8312345678", insBase:12000000, allowance:2000000, allowanceName:"Phụ cấp kiêm nhiệm",
+        deps:2, mst:"8312345678", insBase:12000000, allowance:2000000, allowanceName:"Phụ cấp kiêm nhiệm", bonus:2000000, advance:1000000,
         otherIncome:[], overtime:[{name:"Luyện thi cuối tuần / Weekend exam prep", rate:450000, hours:8}],
         weekly:[
           {id:"s1",label:"IELTS Writing",dow:1,start:"18:00",end:"20:00",mult:1},
@@ -1469,9 +1374,9 @@ function demoSeed(){
           {id:"s4",label:"Speaking club",dow:6,start:"09:00",end:"11:00",mult:1},
         ],
         deductions:{ "2026-06-08_s1":{mins:15,note:"Đến muộn / Arrived late"}, "2026-06-12_s3":{mins:30,note:"Về sớm / Left early"} },
-        toggles:{si:true,hi:true,ui:true,split:true,cap:true} },
+        toggles:{si:true,hi:true,ui:true,split:true,cap:true,union:true} },
       { id:2, name:"Michael James Carter", empId:"GV02", type:"non", cur:"usd", rate:22, fx:25400,
-        deps:0, mst:"", insBase:0, allowance:5000000, allowanceName:"Housing allowance",
+        deps:0, mst:"", insBase:0, allowance:5000000, allowanceName:"Housing allowance", allowanceExempt:true,
         otherIncome:[{name:"Kiểm tra đầu vào / Placement testing", rate:600000, hours:4}],
         overtime:[{name:"Saturday workshop", rate:33, hours:5}],
         weekly:[
@@ -1481,7 +1386,7 @@ function demoSeed(){
         ],
         deductions:{},
         toggles:{si:false,hi:false,ui:false,split:true,cap:true} },
-      { id:3, name:"Phạm Quốc Anh", empId:"GV03", type:"res", cur:"vnd", rate:280000, fx:25000,
+      { id:3, name:"Phạm Quốc Anh", empId:"GV03", type:"casual", cur:"vnd", rate:280000, fx:25000,
         deps:0, mst:"8298765432", insBase:8000000, allowance:0, allowanceName:"",
         otherIncome:[], overtime:[],
         weekly:[
@@ -1489,7 +1394,7 @@ function demoSeed(){
           {id:"s2",label:"Kids English",dow:4,start:"17:00",end:"18:30",mult:1},
         ],
         deductions:{},
-        toggles:{si:true,hi:true,ui:true,split:true,cap:true} },
+        toggles:{si:false,hi:false,ui:false,split:true,cap:true} },
     ],
     nextId:4
   }));
