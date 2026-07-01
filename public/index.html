@@ -185,6 +185,20 @@
   .modal{background:var(--paper);border-radius:var(--radius);box-shadow:0 20px 60px rgba(0,0,0,.25);width:100%;max-width:440px;padding:20px;max-height:85vh;overflow:auto;}
   .modal-head{margin-bottom:14px;}
   .day-item{padding:14px;border:1px solid var(--line-soft);border-radius:11px;margin-bottom:12px;}
+  .mainnav{display:flex;gap:6px;margin-bottom:16px;}
+  .mainnav button{border:1px solid var(--line);background:var(--paper);color:var(--ink-soft);font-family:inherit;font-weight:600;font-size:13.5px;padding:8px 16px;border-radius:10px;cursor:pointer;}
+  .mainnav button.on{background:var(--teal);color:#fff;border-color:var(--teal);}
+  .att-dow{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:6px;}
+  .att-dow span{text-align:center;font-size:11px;color:var(--ink-soft);}
+  .att-cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
+  .att-d{aspect-ratio:1;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:14px;font-weight:600;border:1px solid #eef3f0;color:#b6c2bc;}
+  .att-d.cls{cursor:pointer;background:#f4f8f6;color:var(--ink);}
+  .att-d.present{background:#2e9e5b;color:#fff;border-color:#2e9e5b;}
+  .att-d.absent{background:#c0392b;color:#fff;border-color:#c0392b;}
+  .att-d small{font-size:9px;line-height:1;}
+  .att-legend{display:flex;gap:16px;margin-top:12px;font-size:12px;color:var(--ink-soft);}
+  .att-legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px;}
+  .att-sum{background:#e4f2ef;border:1px solid var(--teal);border-radius:12px;padding:12px 15px;display:flex;justify-content:space-between;margin-top:14px;color:#0a5b53;font-weight:600;}
 </style>
 </head>
 <body>
@@ -196,6 +210,7 @@
 const I18N = {
   en:{
     appsub:"Galo · Teacher payroll",
+    payrolltab:"Payroll", classroomtab:"Classroom", classes:"Classes", students:"Students", addclassbtn:"Add class", addstudent:"Add student", present:"Present", absent:"Absent", noclass:"No class", newclassname:"Class name (e.g. IELTS Mon/Wed)", classdays:"Class days (1=Mon…7=Sun, e.g. 1,3)", newstudentname:"Student name",
     teachers:"Teachers", monthlytotal:"Monthly total", addteacher:"Add teacher",
     who:"Who they are", howpaid:"How they're paid", howpaidhint:"Rate per hour × hours from the schedule.", taxdeps:"Tax & dependents", allowins:"Allowance & insurance", psum_hours:"Hours",
     centersetup:"Center setup", setup:"Setup",
@@ -252,6 +267,7 @@ const I18N = {
   },
   vi:{
     appsub:"Galo · Lương phi mã",
+    payrolltab:"Lương", classroomtab:"Lớp học", classes:"Lớp học", students:"Học sinh", addclassbtn:"Thêm lớp", addstudent:"Thêm học sinh", present:"Có mặt", absent:"Vắng", noclass:"Không học", newclassname:"Tên lớp (vd: IELTS T2/T4)", classdays:"Ngày học (1=T2…7=CN, vd 1,3)", newstudentname:"Tên học sinh",
     teachers:"Giáo viên", monthlytotal:"Tổng tháng", addteacher:"Thêm giáo viên",
     who:"Thông tin giáo viên", howpaid:"Cách trả lương", howpaidhint:"Đơn giá giờ × số giờ theo lịch dạy.", taxdeps:"Thuế & người phụ thuộc", allowins:"Phụ cấp & bảo hiểm", psum_hours:"Số giờ",
     centersetup:"Thiết lập trung tâm", setup:"Thiết lập",
@@ -342,6 +358,12 @@ let teachers = [
     toggles:{si:true,hi:true,ui:false,split:true,cap:true} },
 ];
 let nextId = 3;
+let classes = [
+  { id:1, name:"IELTS 6.5 · Mon/Wed", dows:[1,3],
+    students:[{id:1,name:"Nguyễn Hải"},{id:2,name:"Trần Lan"},{id:3,name:"Phạm Đức"}],
+    attend:{} },
+];
+let nextClassId = 2;
 let view = { screen:"roster", teacherId:null };
 
 /* ---------- helpers ---------- */
@@ -473,10 +495,13 @@ function render(){
   const app = document.getElementById("app");
   app.innerHTML = "";
   app.appendChild(topbar());
-  if(view.screen==="roster") app.appendChild(rosterScreen());
+  if(view.screen==="roster"){ app.appendChild(navbar("pay")); app.appendChild(rosterScreen()); }
+  else if(view.screen==="classroom"){ app.appendChild(navbar("class")); app.appendChild(classroomScreen()); }
   else if(view.screen==="setup") app.appendChild(setupScreen());
   else if(view.screen==="detail") app.appendChild(detailScreen());
   else if(view.screen==="payslip") app.appendChild(payslipScreen());
+  else if(view.screen==="classroster") app.appendChild(classRosterScreen());
+  else if(view.screen==="attend") app.appendChild(attendScreen());
 }
 
 function topbar(){
@@ -1234,10 +1259,124 @@ async function decryptData(str){
     return JSON.parse(new TextDecoder().decode(dec));
   }catch(e){ return null; }
 }
+/* ===== Classroom · student attendance (on-device, no server) ===== */
+function navbar(active){
+  const nav = el("div",{class:"mainnav"});
+  const p = el("button",{class: active==="pay"?"on":""}, t("payrolltab"));
+  p.onclick = ()=>{ view.screen="roster"; render(); };
+  const c = el("button",{class: active==="class"?"on":""}, t("classroomtab"));
+  c.onclick = ()=>{ view.screen="classroom"; render(); };
+  nav.appendChild(p); nav.appendChild(c);
+  return nav;
+}
+function clsById(id){ return classes.find(c=>c.id===id); }
+function attPad(n){ return (n<10?"0":"")+n; }
+function attKey(sid,y,m,d){ return sid+"|"+y+"-"+attPad(m+1)+"-"+attPad(d); }
+function studentPct(cl, sid){
+  let p=0,a=0; const pre=sid+"|";
+  for(const k in cl.attend){ if(k.indexOf(pre)===0){ if(cl.attend[k]==="present")p++; else if(cl.attend[k]==="absent")a++; } }
+  const tot=p+a; return {p,a,pct: tot? Math.round(p/tot*100):null};
+}
+function row3(avatar, title, sub, right, circle){
+  const r = el("div",{style:"display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid #eef3f0;cursor:pointer;"});
+  r.innerHTML = `<div style="width:38px;height:38px;border-radius:${circle?'50%':'10px'};background:#e4f2ef;color:#0a5b53;display:flex;align-items:center;justify-content:center;font-weight:600;">${esc(avatar)}</div>`
+    + `<div style="flex:1;min-width:0;"><div style="font-weight:600;">${esc(title)}</div><div class="muted" style="font-size:12px;">${sub}</div></div>`
+    + `<div style="display:flex;align-items:center;gap:9px;">${right||""}<span style="color:#8a978f;">›</span></div>`;
+  return r;
+}
+function classroomScreen(){
+  const frag = document.createDocumentFragment();
+  const card = el("div",{class:"card"});
+  card.innerHTML = `<div class="eyebrow">${t("classroomtab")}</div><div class="muted" style="margin-bottom:4px;">${classes.length} ${t("classes").toLowerCase()}</div>`;
+  classes.forEach(cl=>{
+    const r = row3((cl.name||"?").trim()[0], cl.name, cl.students.length+" "+t("students").toLowerCase());
+    r.onclick = ()=>{ view.screen="classroster"; view.classId=cl.id; render(); };
+    card.appendChild(r);
+  });
+  frag.appendChild(card);
+  const add = el("button",{class:"btn btn-primary",style:"margin-top:14px;"}, "+ "+t("addclassbtn"));
+  add.onclick = ()=>{
+    const name = prompt(t("newclassname")); if(!name) return;
+    const days = prompt(t("classdays"),"1,3")||"";
+    const dows = days.split(",").map(s=>parseInt(s.trim())).filter(n=>n>=1&&n<=7);
+    const nc = {id:nextClassId++, name:name.trim(), dows, students:[], attend:{}};
+    classes.push(nc); view.screen="classroster"; view.classId=nc.id; render();
+  };
+  frag.appendChild(add);
+  return frag;
+}
+function classRosterScreen(){
+  const cl = clsById(view.classId);
+  const frag = document.createDocumentFragment();
+  if(!cl){ view.screen="classroom"; return frag; }
+  const back = el("button",{class:"btn btn-ghost",style:"margin-bottom:14px;"}, "‹ "+t("classes"));
+  back.onclick = ()=>{ view.screen="classroom"; render(); };
+  frag.appendChild(back);
+  const card = el("div",{class:"card"});
+  card.innerHTML = `<div class="eyebrow">${esc(cl.name)}</div><div class="muted" style="margin-bottom:4px;">${cl.students.length} ${t("students").toLowerCase()}</div>`;
+  cl.students.forEach(st=>{
+    const s = studentPct(cl, st.id);
+    const badge = s.pct===null ? "" : `<span style="font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px;background:${s.pct>=80?'#e3f3e9':'#faeceb'};color:${s.pct>=80?'#2e9e5b':'#c0392b'};">${s.pct}%</span>`;
+    const r = row3(st.name.trim()[0], st.name, s.p+" "+t("present").toLowerCase()+" · "+s.a+" "+t("absent").toLowerCase(), badge, true);
+    r.onclick = ()=>{ view.screen="attend"; view.studentId=st.id; const n=new Date(); view.attY=n.getFullYear(); view.attM=n.getMonth(); render(); };
+    card.appendChild(r);
+  });
+  frag.appendChild(card);
+  const add = el("button",{class:"btn btn-primary",style:"margin-top:14px;"}, "+ "+t("addstudent"));
+  add.onclick = ()=>{ const name=prompt(t("newstudentname")); if(!name) return; const sid=cl.students.reduce((m,s)=>Math.max(m,s.id),0)+1; cl.students.push({id:sid,name:name.trim()}); render(); };
+  frag.appendChild(add);
+  return frag;
+}
+function attendScreen(){
+  const cl = clsById(view.classId);
+  const frag = document.createDocumentFragment();
+  if(!cl){ view.screen="classroom"; return frag; }
+  const st = cl.students.find(s=>s.id===view.studentId);
+  if(!st){ view.screen="classroster"; return frag; }
+  const y=view.attY, m=view.attM;
+  const back = el("button",{class:"btn btn-ghost",style:"margin-bottom:14px;"}, "‹ "+esc(cl.name));
+  back.onclick = ()=>{ view.screen="classroster"; render(); };
+  frag.appendChild(back);
+  const card = el("div",{class:"card card-pad"});
+  const hd = el("div",{style:"display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:10px;"});
+  const prevB = el("button",{class:"iconbtn"},"‹"); prevB.onclick=()=>{ view.attM--; if(view.attM<0){view.attM=11;view.attY--;} render(); };
+  const nextB = el("button",{class:"iconbtn"},"›"); nextB.onclick=()=>{ view.attM++; if(view.attM>11){view.attM=0;view.attY++;} render(); };
+  const mlabel = lang==="vi" ? ("Tháng "+(m+1)) : new Date(y,m,1).toLocaleString("en",{month:"long"});
+  const title = el("div",{style:"font-weight:600;text-align:center;flex:1;"}, esc(st.name)+" · "+mlabel+" "+y);
+  hd.appendChild(prevB); hd.appendChild(title); hd.appendChild(nextB); card.appendChild(hd);
+  const dow = el("div",{class:"att-dow"}); ["T2","T3","T4","T5","T6","T7","CN"].forEach(d=>dow.appendChild(el("span",{},d))); card.appendChild(dow);
+  const grid = el("div",{class:"att-cal"});
+  const firstDow = (new Date(y,m,1).getDay()+6)%7;
+  const daysIn = new Date(y,m+1,0).getDate();
+  for(let i=0;i<firstDow;i++) grid.appendChild(el("div",{}));
+  let pC=0,aC=0;
+  for(let d=1;d<=daysIn;d++){
+    const dowN = ((new Date(y,m,d).getDay())+6)%7+1;
+    const isClass = cl.dows.includes(dowN);
+    const key = attKey(st.id,y,m,d);
+    const stt = cl.attend[key];
+    if(stt==="present")pC++; if(stt==="absent")aC++;
+    const cell = el("div",{class:"att-d"+(isClass?" cls":"")+(stt?" "+stt:"")});
+    cell.innerHTML = d + (stt==="present"?'<small>✓</small>':stt==="absent"?'<small>✕</small>':'');
+    if(isClass){ cell.onclick = ()=>{ const cur=cl.attend[key]; if(!cur) cl.attend[key]="present"; else if(cur==="present") cl.attend[key]="absent"; else delete cl.attend[key]; render(); }; }
+    grid.appendChild(cell);
+  }
+  card.appendChild(grid);
+  const legend = el("div",{class:"att-legend"});
+  legend.innerHTML = `<span><i style="background:#2e9e5b"></i>${t("present")}</span><span><i style="background:#c0392b"></i>${t("absent")}</span><span><i style="background:#eef3f0"></i>${t("noclass")}</span>`;
+  card.appendChild(legend);
+  const tot=pC+aC;
+  const sum = el("div",{class:"att-sum"});
+  sum.innerHTML = `<span>${pC} ${t("present").toLowerCase()} · ${aC} ${t("absent").toLowerCase()}</span><span>${tot?Math.round(pC/tot*100):0}%</span>`;
+  card.appendChild(sum);
+  frag.appendChild(card);
+  return frag;
+}
+
 async function saveData(){
   if(!CRYPTO_KEY) return;
   try{
-    const payload = { center, teachers, nextId };
+    const payload = { center, teachers, nextId, classes, nextClassId };
     localStorage.setItem(LS_DATA, await encryptData(payload));
   }catch(e){ console.warn("save failed", e); }
 }
@@ -1245,7 +1384,7 @@ async function loadData(){
   const raw = localStorage.getItem(LS_DATA);
   if(!raw) return false;
   const obj = await decryptData(raw);
-  if(obj && obj.teachers){ center = obj.center||center; teachers = obj.teachers; nextId = obj.nextId||teachers.length+1; return true; }
+  if(obj && obj.teachers){ center = obj.center||center; teachers = obj.teachers; nextId = obj.nextId||teachers.length+1; if(obj.classes){ classes = obj.classes; nextClassId = obj.nextClassId || (classes.reduce((m,c)=>Math.max(m,c.id),0)+1); } return true; }
   return false;
 }
 /* autosave: wrap render so every change persists */
