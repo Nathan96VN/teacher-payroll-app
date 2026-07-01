@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lương Giáo Viên · Teacher Payroll</title>
+<title>Galo · Lương Giáo Viên</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='28' fill='%230d7a6f'/%3E%3Cpath d='M26 62 L96 28 L60 66 Z' fill='white' opacity='0.55'/%3E%3Cpath d='M60 66 L96 28 L72 96 Z' fill='%23e8b24e'/%3E%3C/svg%3E">
 <style>
   :root{
     --ink:#16202a; --ink-soft:#5a6b78; --line:#e4e9ed; --line-soft:#eef2f5;
@@ -90,6 +91,16 @@
   .toggle-row:last-child{border-bottom:none;}
   .toggle-row input{width:auto;height:auto;}
   .hint{font-size:11px;color:var(--ink-soft);margin-top:5px;line-height:1.45;}
+  .paysum{position:sticky;top:8px;z-index:6;display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--teal-soft);border:1px solid var(--teal);border-radius:12px;padding:11px 16px;margin-bottom:16px;}
+  .paysum .ps-figs{display:flex;gap:20px;}
+  .paysum .ps-k{font-size:11px;color:var(--teal);}
+  .paysum .ps-v{font-size:14px;font-weight:600;color:var(--teal);}
+  .paysum .ps-net{font-size:20px;font-weight:700;color:var(--teal);line-height:1.15;}
+  .subhead{grid-column:1 / -1;margin:8px 0 0;}
+  .subhead:first-child{margin-top:0;}
+  .subhead-row{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--ink);}
+  .subhead-row svg{width:16px;height:16px;color:var(--ink-soft);flex-shrink:0;}
+  .subhead-hint{font-size:11px;color:var(--ink-soft);margin-top:3px;}
 
   .disclaimer{background:var(--gold-soft);border:1px solid #ecd9b0;border-radius:11px;padding:13px 15px;font-size:12px;color:#7a5a1c;line-height:1.5;margin-top:18px;}
   .disclaimer b{color:#5e4415;}
@@ -184,8 +195,9 @@
 /* ---------- i18n ---------- */
 const I18N = {
   en:{
-    appsub:"Teacher payroll",
+    appsub:"Galo · Teacher payroll",
     teachers:"Teachers", monthlytotal:"Monthly total", addteacher:"Add teacher",
+    who:"Who they are", howpaid:"How they're paid", howpaidhint:"Rate per hour × hours from the schedule.", taxdeps:"Tax & dependents", allowins:"Allowance & insurance", psum_hours:"Hours",
     centersetup:"Center setup", setup:"Setup",
     back:"Back to teachers",
     name:"Name", taxstatus:"Tax status", resident:"Resident (progressive)",
@@ -239,8 +251,9 @@ const I18N = {
     exemptnote:"All lawful overtime — fully exempt from PIT under Law 109/2025",
   },
   vi:{
-    appsub:"Lương giáo viên",
+    appsub:"Galo · Lương phi mã",
     teachers:"Giáo viên", monthlytotal:"Tổng tháng", addteacher:"Thêm giáo viên",
+    who:"Thông tin giáo viên", howpaid:"Cách trả lương", howpaidhint:"Đơn giá giờ × số giờ theo lịch dạy.", taxdeps:"Thuế & người phụ thuộc", allowins:"Phụ cấp & bảo hiểm", psum_hours:"Số giờ",
     centersetup:"Thiết lập trung tâm", setup:"Thiết lập",
     back:"Về danh sách",
     name:"Họ tên", taxstatus:"Tình trạng thuế", resident:"Cư trú (lũy tiến)",
@@ -583,6 +596,21 @@ function field(label, inner){
 function esc(s){ return (s||"").replace(/"/g,"&quot;"); }
 
 /* ---------- teacher detail ---------- */
+function subhead(svg, label, hint){
+  const d = el("div",{class:"subhead"});
+  d.innerHTML = `<div class="subhead-row">${svg}<span>${label}</span></div>`+(hint?`<div class="subhead-hint">${hint}</div>`:"");
+  return d;
+}
+const SUB_ICONS = {
+  who:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>`,
+  pay:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg>`,
+  tax:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/><path d="M16 5.5a3 3 0 0 1 0 6"/></svg>`,
+  ins:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4-3 7-7 9-4-2-7-5-7-9V6z"/></svg>`
+};
+function renderPaySum(box, tch, r){
+  r = r || calc(tch);
+  box.innerHTML = `<div class="ps-figs"><div><div class="ps-k">${t("psum_hours")}</div><div class="ps-v">${Math.round(r.hoursWorked*100)/100}</div></div><div><div class="ps-k">${t("gross")}</div><div class="ps-v">${vnd(r.gross)}</div></div></div><div style="text-align:right"><div class="ps-k">${t("net")}</div><div class="ps-net">${vnd(r.net)}</div></div>`;
+}
 function detailScreen(){
   const tch = teachers.find(x=>x.id===view.teacherId);
   const frag = document.createDocumentFragment();
@@ -590,13 +618,20 @@ function detailScreen(){
   back.onclick = ()=>{ view.screen="roster"; render(); };
   frag.appendChild(back);
 
+  // live pay summary (stays in view while editing)
+  const paysum = el("div",{class:"paysum",id:"paysum"});
+  renderPaySum(paysum, tch);
+  frag.appendChild(paysum);
+
   // profile card
   const card = el("div",{class:"card card-pad"});
   const grid = el("div",{class:"grid cols2"});
+  grid.appendChild(subhead(SUB_ICONS.who, t("who")));
   grid.appendChild(field(t("name"), `<input id="d-name" value="${esc(tch.name)}">`));
   grid.appendChild(field(t("employeeid"), `<input id="d-empid" value="${esc(tch.empId)}">`));
   grid.appendChild(field(t("taxstatus"),
     `<select id="d-type"><option value="res" ${tch.type==="res"?"selected":""}>${t("resident")}</option><option value="non" ${tch.type==="non"?"selected":""}>${t("nonresident")}</option><option value="casual" ${tch.type==="casual"?"selected":""}>${t("casual")}</option></select>`));
+  grid.appendChild(subhead(SUB_ICONS.pay, t("howpaid"), t("howpaidhint")));
   grid.appendChild(field(t("paidin"),
     `<select id="d-cur"><option value="vnd" ${tch.cur==="vnd"?"selected":""}>${t("vnddirect")}</option><option value="usd" ${tch.cur==="usd"?"selected":""}>${t("usdrate")}</option></select>`));
   const rateField = field(tch.cur==="usd"?t("usdhour"):t("ratehour"), `<input id="d-rate" type="number" value="${tch.rate}">`);
@@ -606,8 +641,10 @@ function detailScreen(){
   if(tch.cur!=="usd") fxField.classList.add("hidden");
   fxField.id="d-fxwrap";
   grid.appendChild(fxField);
+  grid.appendChild(subhead(SUB_ICONS.tax, t("taxdeps")));
   grid.appendChild(field(t("dependents"), `<input id="d-deps" type="number" min="0" value="${tch.deps}">`));
   grid.appendChild(field(t("taxnumber"), `<input id="d-mst" placeholder="${t("taxnumberph")}" value="${esc(tch.mst)}">`));
+  grid.appendChild(subhead(SUB_ICONS.ins, t("allowins")));
   grid.appendChild(field(t("allowancename"), `<input id="d-allowname" placeholder="${t("allowancenameph")}" value="${esc(tch.allowanceName||"")}">`));
   const allowField = field(t("allowance"), `<input id="d-allow" type="number" value="${tch.allowance||0}">`);
   allowField.insertAdjacentHTML("beforeend", `<div class="hint" id="cap-allow"></div><label style="display:flex;align-items:center;gap:7px;margin-top:7px;font-size:12.5px;color:var(--ink-soft);cursor:pointer;"><input type="checkbox" id="d-allowexempt" ${tch.allowanceExempt?"checked":""} style="width:16px;height:16px;accent-color:var(--teal);"> ${t("allowexempt")}</label>`);
@@ -988,6 +1025,7 @@ function readDetail(tch){
 
 function renderBreakdown(box, tch){
   const r = calc(tch);
+  const _ps=document.getElementById("paysum"); if(_ps) renderPaySum(_ps, tch, r);
   const rows = [];
   rows.push(["lab", t("rateperiod"), vnd(r.ratePerHour)]);
   rows.push(["lab", t("periodsmonth"), (Math.round(r.hoursWorked*100)/100).toString()]);
@@ -1100,7 +1138,9 @@ function payslipScreen(){
 }
 
 /* ---------- exports ---------- */
+function demoBlock(){ alert(lang==="vi" ? "Xuất bị tắt trong bản demo. Đăng ký để mở khoá đầy đủ tính năng." : "Export is disabled in the demo. Register to unlock the full app."); }
 function exportPDF(tch){
+  if(DEMO){ demoBlock(); return; }
   const css = document.querySelector("style").innerHTML;
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${t("payslip")} · ${tch.name}</title>
     <style>${css} body{background:#fff;padding:24px;} .slip{box-shadow:none;max-width:720px;margin:0 auto;}</style></head>
@@ -1109,6 +1149,7 @@ function exportPDF(tch){
   if(w){ w.document.write(html); w.document.close(); setTimeout(()=>w.print(),350); }
 }
 function exportCSV(tch){
+  if(DEMO){ demoBlock(); return; }
   const r = calc(tch); const L=I18N[lang];
   const rows = [
     [L.payslip, tch.name],
@@ -1220,8 +1261,8 @@ function showGate(msg){
   app.innerHTML = `
     <div style="max-width:420px;margin:8vh auto;padding:0 16px;">
       <div style="display:flex;align-items:center;gap:11px;justify-content:center;margin-bottom:26px;">
-        <div style="width:42px;height:42px;border-radius:11px;background:var(--teal);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;">L</div>
-        <div><div style="font-weight:700;font-size:16px;">Lương Giáo Viên</div><div style="font-size:12px;color:var(--ink-soft);">Teacher Payroll</div></div>
+        <div style="width:42px;height:42px;border-radius:11px;background:var(--teal);display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 96 96" style="width:26px;height:26px;"><path d="M14 50 L84 16 L48 54 Z" fill="#fff" opacity=".55"/><path d="M48 54 L84 16 L60 84 Z" fill="#e8b24e"/></svg></div>
+        <div><div style="font-weight:800;font-size:18px;letter-spacing:-.01em;">Galo</div><div style="font-size:12px;color:var(--ink-soft);">Lương phi mã · Teacher Payroll</div></div>
       </div>
       <div class="card card-pad">
         <div style="font-size:18px;font-weight:600;margin-bottom:5px;">Mở khoá ứng dụng / Unlock</div>
